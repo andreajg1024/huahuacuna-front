@@ -19,6 +19,10 @@ interface DashboardLayoutProps {
   onNavigate?: (page: string) => void;
 }
 
+// DashboardLayout es el layout común de todas las pantallas internas (después de login):
+// - Muestra la barra superior con logo, notificaciones y menú de usuario.
+// - Usa useAuth para mostrar los datos del usuario y permitir logout.
+// - Renderiza children sin imponer sidebar (los dashboards deciden su propio contenido).
 export function DashboardLayout({ children, onNavigate }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);

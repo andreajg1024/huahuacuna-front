@@ -85,6 +85,11 @@ const mockUsers: (User & { password: string })[] = [
   },
 ];
 
+// AuthProvider encapsula toda la lógica de autenticación en memoria:
+// - Usa un pequeño "mock" de usuarios con roles (super_admin, admin, padrino).
+// - Simula login, registro y actualización de perfil con localStorage.
+// - Implementa bloqueo temporal por demasiados intentos fallidos.
+// Esta capa está lista para reemplazarse por llamadas reales a un backend en el futuro.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);

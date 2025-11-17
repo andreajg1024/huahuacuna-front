@@ -225,6 +225,11 @@ const mockEntries: { [childId: string]: BitacoraEntry[] } = {
   ],
 };
 
+// BitacoraProvider centraliza toda la lógica de Bitácoras:
+// - childrenList: listado de niños gestionados en la sección de Bitácoras.
+// - entries: mapa childId -> entradas (fotos/videos) con metadata rica.
+// - Funciones CRUD simuladas (add/update/delete child/entry) y utilidades como getChildStats o generatePDF.
+// Todo está mockeado en memoria pero pensado para reemplazar por API real sin cambiar componentes.
 export function BitacoraProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [childrenList, setChildrenList] = useState<Child[]>(mockChildren);

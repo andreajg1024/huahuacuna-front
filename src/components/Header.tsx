@@ -13,6 +13,10 @@ interface HeaderProps {
   currentSection: string;
 }
 
+// Header es la barra superior del sitio público (landing):
+// - Muestra el logo principal (logo.png) y el nombre de la fundación.
+// - Controla la navegación entre secciones públicas usando onNavigate.
+// - Tiene versión desktop con menú "Más" y un menú colapsable para móviles.
 export function Header({ onNavigate, currentSection }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

@@ -68,6 +68,11 @@ import { DonationReports } from './components/reports/DonationReports';
 import { MessagesPage } from './components/sponsorship/MessagesPage';
 import { SystemSettingsPage } from './components/admin/SystemSettingsPage';
 
+// AppContent actúa como el "router" principal de la SPA.
+// - Controla la página actual mediante currentPage (home, dashboard, etc.).
+// - Cuando el usuario está autenticado, muestra el DashboardLayout y las páginas internas según el rol.
+// - Cuando NO está autenticado, muestra el landing público (Header + secciones públicas).
+// Este componente se monta dentro de Next (pages/index.tsx) para mantener la estructura original del Figma.
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');

@@ -17,6 +17,10 @@ interface SystemSettingsPageProps {
  * No persiste datos en backend (todo es local/mock), pero deja la UI lista
  * para conectar APIs en el futuro.
  */
+// SystemSettingsPage es una pantalla de configuración UI-only para super admin:
+// - Permite alternar flags como modo mantenimiento o aceptación de nuevos padrinos/voluntarios.
+// - Expone campos de contacto y muestra/edita una copia local de NEXT_PUBLIC_API_BASE_URL.
+// - No guarda en backend (usa solo console.log), pero deja lista la estructura para conectar una API real.
 export const SystemSettingsPage: React.FC<SystemSettingsPageProps> = ({ onNavigate }) => {
   const [maintenanceMode, setMaintenanceMode] = React.useState(false);
   const [allowNewSponsors, setAllowNewSponsors] = React.useState(true);

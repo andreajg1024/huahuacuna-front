@@ -158,6 +158,10 @@ const defaultCategories: NewsCategoryData[] = [
   }
 ];
 
+// NewsProvider implementa un pequeño CMS de noticias/blog en memoria:
+// - articles: listado de artículos con SEO, categorías, visibilidad y métricas básicas.
+// - categories: metadatos de categorías (color, icono, orden, conteo).
+// Exponer helpers para crear/editar/publicar artículos, generar slugs, calcular tiempo de lectura y filtrar por categoría/tag.
 export const NewsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [categories, setCategories] = useState<NewsCategoryData[]>(defaultCategories);

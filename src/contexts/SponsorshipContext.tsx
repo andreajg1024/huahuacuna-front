@@ -196,6 +196,11 @@ const mockChildren: Child[] = [
   },
 ];
 
+// SponsorshipProvider maneja el estado de apadrinamientos en memoria:
+// - mockChildren: catálogo de niños que se muestran en el frontend.
+// - sponsorships: relaciones padrino-niño (simuladas, sin backend real).
+// - chatMessages: mensajes entre padrino y coordinadora para el módulo de "Mensajes".
+// También expone helpers para filtrar niños, obtener el niño apadrinado actual y contar mensajes no leídos.
 export function SponsorshipProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [allChildren, setAllChildren] = useState<Child[]>(mockChildren);

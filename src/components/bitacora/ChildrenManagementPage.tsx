@@ -16,6 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useBitacora } from '../../contexts/BitacoraContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 
+// ChildrenManagementPage es la vista de administración de niños/bitácoras:
+// - Lista niños con filtros por nombre, estado de apadrinamiento y municipio.
+// - Muestra métricas rápidas (totales, apadrinados, disponibles, en alerta).
+// - Desde aquí se navega al formulario de registro y a la Bitácora de cada niño.
 export function ChildrenManagementPage({ onNavigate }: { onNavigate: (page: string, id?: string) => void }) {
   const { children, getChildStats } = useBitacora();
   const [search, setSearch] = useState('');

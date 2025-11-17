@@ -21,6 +21,10 @@ interface SuperAdminDashboardProps {
   onNavigate: (page: string) => void;
 }
 
+// SuperAdminDashboard es el panel de entrada para el rol SUPER ADMIN:
+// - Muestra tarjetas de métricas generales (usuarios, niños, apadrinamientos).
+// - Lista módulos de alto nivel (usuarios, niños, bitácoras, reportes, configuración) y navega vía onNavigate.
+// - Está pensado como menú principal desde el cual se accede a toda la administración del sistema.
 export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
   const { user } = useAuth();
 

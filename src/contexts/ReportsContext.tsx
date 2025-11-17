@@ -92,6 +92,11 @@ interface ReportsContextType {
 
 const ReportsContext = createContext<ReportsContextType | undefined>(undefined);
 
+// ReportsProvider agrega una capa de KPIs y reportes agregados sobre los demás contextos:
+// - Calcula métricas de apadrinamientos, donaciones, voluntarios y proyectos (get*KPIs).
+// - Expone series de tiempo y distribuciones para alimentar gráficos.
+// - Genera un feed de actividad reciente para dashboards administrativos.
+// Todo está basado en datos mock de otros providers, listo para conectar a backend real.
 export const ReportsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { sponsorships, children: sponsoredChildren } = useSponsorship();
   const { donations, inKindDonations } = useDonations();

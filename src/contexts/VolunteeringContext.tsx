@@ -349,6 +349,10 @@ const defaultPageContent: VolunteeringPageContent = {
   ]
 };
 
+// VolunteeringProvider maneja:
+// - applications: solicitudes de voluntariado con estado e historial.
+// - pageContent: contenido dinámico para la página pública de voluntariado (textos, FAQs, etc.).
+// Incluye utilidades de negocio como cambio de estado, envío de correos simulados y trazabilidad vía historial.
 export const VolunteeringProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [applications, setApplications] = useState<VolunteerApplication[]>([]);
   const [pageContent, setPageContent] = useState<VolunteeringPageContent>(defaultPageContent);

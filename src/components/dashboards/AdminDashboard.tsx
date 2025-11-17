@@ -21,6 +21,10 @@ interface AdminDashboardProps {
   onNavigate: (page: string) => void;
 }
 
+// AdminDashboard es el panel de entrada para el rol ADMIN:
+// - Usa permissions (desde AuthContext) para decidir qué módulos están activos o restringidos.
+// - Ofrece accesos directos a niños, bitácoras, apadrinamientos, proyectos, reportes, etc.
+// - También muestra un pequeño listado de tareas pendientes para el día a día del administrador.
 export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const { user } = useAuth();
 

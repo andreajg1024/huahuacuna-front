@@ -237,6 +237,11 @@ const initialVolunteers: Volunteer[] = [
   }
 ];
 
+// ProjectsProvider gestiona el módulo de proyectos y voluntarios:
+// - projects: lista de proyectos con información de impacto, fechas, estado y voluntarios.
+// - volunteers: postulaciones de voluntarios asociadas a proyectos.
+// - Provee helpers para CRUD, duplicar proyectos, filtrar por estado y registrar/eliminar voluntarios.
+// Es la fuente de datos para las vistas de proyectos públicos y la gestión interna (ProjectManagementPage).
 export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [volunteers, setVolunteers] = useState<Volunteer[]>(initialVolunteers);

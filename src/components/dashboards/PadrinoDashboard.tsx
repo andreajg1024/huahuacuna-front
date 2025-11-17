@@ -22,6 +22,10 @@ interface PadrinoDashboardProps {
   onNavigate: (page: string) => void;
 }
 
+// PadrinoDashboard es la "home" del padrino dentro del sistema:
+// - Resalta el niño apadrinado (si existe) con tarjeta hero y métricas.
+// - Expone accesos rápidos a Bitácora, Mensajes, Mis Donaciones, Eventos y Documentos.
+// - Si aún no tiene apadrinamiento, muestra un CTA para ir al catálogo de niños.
 export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
   const { user } = useAuth();
   const { mySponsoredChild, mySponsorship, children, unreadMessagesCount } = useSponsorship();

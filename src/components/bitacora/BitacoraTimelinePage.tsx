@@ -47,6 +47,10 @@ interface BitacoraTimelinePageProps {
   childId?: string;
 }
 
+// BitacoraTimelinePage muestra la línea de tiempo multimedia de un niño:
+// - Trae niño, entradas y estadísticas desde BitacoraContext.
+// - Permite filtrar por fechas, tipo, categoría y cambiar entre vistas (timeline, galería, lista).
+// - Admin puede agregar/editar/eliminar entradas y generar PDF; padrino solo ve contenido público.
 export function BitacoraTimelinePage({ childId }: BitacoraTimelinePageProps) {
   const { user } = useAuth();
   const { getChildById, getChildEntries, getChildStats } = useBitacora();

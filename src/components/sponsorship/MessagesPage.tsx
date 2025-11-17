@@ -17,6 +17,10 @@ interface MessagesPageProps {
  *   reutilizando el componente ChatInterface (modal a pantalla completa).
  * - Si aún no tiene niño apadrinado, muestra un CTA para ir al catálogo.
  */
+// MessagesPage agrupa la experiencia de mensajería para padrinos:
+// - Si NO hay niño apadrinado, muestra una tarjeta explicando el módulo y un botón al catálogo.
+// - Si hay apadrinamiento activo, abre el ChatInterface con la coordinadora para ese sponsorship.
+// Este componente se monta cuando currentPage === 'messages' en App.tsx.
 export const MessagesPage: React.FC<MessagesPageProps> = ({ onNavigate }) => {
   const { mySponsoredChild, mySponsorship, children } = useSponsorship();
   const { user } = useAuth();
