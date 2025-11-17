@@ -36,3 +36,4 @@ export function RoleBadge({ role, showIcon = true }: RoleBadgeProps) {
     </Badge>
   );
 }
+

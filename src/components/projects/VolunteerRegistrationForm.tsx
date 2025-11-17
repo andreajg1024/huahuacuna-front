@@ -659,3 +659,4 @@ export const VolunteerRegistrationForm: React.FC<VolunteerRegistrationFormProps>
     </div>
   );
 };
+

@@ -573,3 +573,4 @@ export const MonetaryDonationForm: React.FC<MonetaryDonationFormProps> = ({ onCl
     </Card>
   );
 };
+

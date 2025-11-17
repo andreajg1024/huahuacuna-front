@@ -500,3 +500,4 @@ export const AdministrativeDashboard: React.FC<AdministrativeDashboardProps> = (
     </div>
   );
 };
+

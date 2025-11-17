@@ -367,3 +367,4 @@ export const NewsArticleDetail: React.FC<NewsArticleDetailProps> = ({ slug, onBa
     </div>
   );
 };
+

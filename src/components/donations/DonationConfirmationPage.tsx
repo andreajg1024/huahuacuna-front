@@ -395,3 +395,4 @@ export const useNavigate = () => {
     window.location.hash = page;
   };
 };
+

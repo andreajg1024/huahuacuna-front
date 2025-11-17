@@ -412,3 +412,4 @@ export function useBitacora() {
   }
   return context;
 }
+

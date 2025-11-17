@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Progress } from '../ui/progress';
 import { useBitacora } from '../../contexts/BitacoraContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const categorias = [
   'Actividad Educativa',
@@ -442,3 +442,4 @@ export function MultimediaUploadModal({
     </Dialog>
   );
 }
+

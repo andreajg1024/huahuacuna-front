@@ -107,3 +107,4 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
     </div>
   );
 }
+

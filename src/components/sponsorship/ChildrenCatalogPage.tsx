@@ -490,3 +490,4 @@ export function ChildrenCatalogPage() {
     </div>
   );
 }
+

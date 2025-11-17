@@ -141,3 +141,4 @@ export function DashboardLayout({ children, onNavigate }: DashboardLayoutProps) 
     </div>
   );
 }
+

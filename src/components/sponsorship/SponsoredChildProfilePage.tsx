@@ -382,3 +382,4 @@ export function SponsoredChildProfilePage({ onNavigate }: SponsoredChildProfileP
     </div>
   );
 }
+

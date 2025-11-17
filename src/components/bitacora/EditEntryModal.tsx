@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useBitacora } from '../../contexts/BitacoraContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const categorias = [
   'Actividad Educativa',
@@ -267,3 +267,4 @@ export function EditEntryModal({ entryId, onClose, onSuccess }: EditEntryModalPr
     </Dialog>
   );
 }
+

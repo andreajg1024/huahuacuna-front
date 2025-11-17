@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Checkbox } from '../ui/checkbox';
 import { useBitacora } from '../../contexts/BitacoraContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 
 interface ChildFormPageProps {
@@ -547,3 +547,4 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
     </div>
   );
 }
+

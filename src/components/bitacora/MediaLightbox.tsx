@@ -255,3 +255,4 @@ export function MediaLightbox({ entryId, onClose }: MediaLightboxProps) {
     </div>
   );
 }
+

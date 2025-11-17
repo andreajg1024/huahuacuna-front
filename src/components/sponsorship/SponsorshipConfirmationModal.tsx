@@ -7,7 +7,7 @@ import { Label } from '../ui/label';
 import { Card, CardContent } from '../ui/card';
 import { useSponsorship } from '../../contexts/SponsorshipContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface SponsorshipConfirmationModalProps {
   childId: string;
@@ -258,3 +258,4 @@ export function SponsorshipConfirmationModal({
     </Dialog>
   );
 }
+

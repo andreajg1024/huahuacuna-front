@@ -251,3 +251,4 @@ export function ChildDetailModal({ childId, onClose, onSponsor }: ChildDetailMod
 function Label({ className, children }: { className?: string; children: React.ReactNode }) {
   return <label className={`block text-sm ${className}`}>{children}</label>;
 }
+

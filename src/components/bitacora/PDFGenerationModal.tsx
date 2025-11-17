@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Checkbox } from '../ui/checkbox';
 import { Progress } from '../ui/progress';
 import { useBitacora } from '../../contexts/BitacoraContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface PDFGenerationModalProps {
   childId: string;
@@ -382,3 +382,4 @@ export function PDFGenerationModal({
     </Dialog>
   );
 }
+

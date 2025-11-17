@@ -13,7 +13,7 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { useBitacora } from '../../contexts/BitacoraContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 const deleteReasons = [
   'Contenido duplicado',
@@ -204,3 +204,4 @@ export function DeleteEntryModal({ entryId, onClose, onConfirm }: DeleteEntryMod
     </Dialog>
   );
 }
+

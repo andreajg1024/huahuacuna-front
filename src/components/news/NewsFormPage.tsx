@@ -701,3 +701,4 @@ export const NewsFormPage: React.FC<NewsFormPageProps> = ({ articleId, onNavigat
     </DashboardLayout>
   );
 };
+

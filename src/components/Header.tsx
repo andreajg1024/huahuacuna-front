@@ -185,3 +185,4 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
     </header>
   );
 }
+

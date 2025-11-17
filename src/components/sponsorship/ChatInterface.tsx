@@ -12,7 +12,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useSponsorship } from '../../contexts/SponsorshipContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface ChatInterfaceProps {
   sponsorshipId: string;
@@ -313,3 +313,4 @@ export function ChatInterface({ sponsorshipId, childName, onClose }: ChatInterfa
     </Dialog>
   );
 }
+

@@ -467,3 +467,4 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
     </div>
   );
 };
+

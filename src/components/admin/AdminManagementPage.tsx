@@ -43,7 +43,7 @@ import { UserAvatar } from '../shared/UserAvatar';
 import { RoleBadge } from '../shared/RoleBadge';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuth, UserRole, UserStatus } from '../../contexts/AuthContext';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Admin {
   id: string;
@@ -665,3 +665,4 @@ export function AdminManagementPage() {
     </div>
   );
 }
+

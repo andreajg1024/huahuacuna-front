@@ -124,3 +124,4 @@ export function ChildCard({ child, variant = 'grid', onViewProfile, onSponsor }:
     </Card>
   );
 }
+

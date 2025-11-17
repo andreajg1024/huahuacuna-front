@@ -10,7 +10,7 @@ import { Switch } from '../ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserAvatar } from '../shared/UserAvatar';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();
@@ -490,3 +490,4 @@ export function ProfilePage() {
     </div>
   );
 }
+

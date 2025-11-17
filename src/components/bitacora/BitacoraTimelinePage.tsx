@@ -39,7 +39,7 @@ import { MediaLightbox } from './MediaLightbox';
 import { PDFGenerationModal } from './PDFGenerationModal';
 import { EditEntryModal } from './EditEntryModal';
 import { DeleteEntryModal } from './DeleteEntryModal';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 type ViewMode = 'timeline' | 'gallery' | 'list';
 
@@ -52,7 +52,7 @@ export function BitacoraTimelinePage({ childId }: BitacoraTimelinePageProps) {
   const { getChildById, getChildEntries, getChildStats } = useBitacora();
 
   // If no childId is provided, try to get the first sponsored child for padrino users
-  const effectiveChildId = childId || (user?.rol === 'padrino' ? user?.apadrinados?.[0] : undefined);
+  const effectiveChildId = childId || (user?.role === 'padrino' ? (user as any)?.apadrinados?.[0] : undefined);
 
   const child = effectiveChildId ? getChildById(effectiveChildId) : null;
   const allEntries = effectiveChildId ? getChildEntries(effectiveChildId) : [];
@@ -801,3 +801,4 @@ export function BitacoraTimelinePage({ childId }: BitacoraTimelinePageProps) {
     </div>
   );
 }
+

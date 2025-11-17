@@ -334,3 +334,4 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
     </div>
   );
 }
+

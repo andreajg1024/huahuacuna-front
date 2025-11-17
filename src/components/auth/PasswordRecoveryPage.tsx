@@ -367,3 +367,4 @@ export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) 
     </div>
   );
 }
+

@@ -452,3 +452,4 @@ export const PublicDonationsPage: React.FC = () => {
     </div>
   );
 };
+

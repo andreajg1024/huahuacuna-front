@@ -226,3 +226,4 @@ export function AboutSection() {
     </div>
   );
 }
+

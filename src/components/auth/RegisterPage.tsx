@@ -530,3 +530,4 @@ export function RegisterPage({ onNavigate }: RegisterPageProps) {
     </div>
   );
 }
+

@@ -352,3 +352,4 @@ export const PublicProjectsPage: React.FC = () => {
     </div>
   );
 };
+
