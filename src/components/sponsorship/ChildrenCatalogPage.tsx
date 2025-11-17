@@ -25,6 +25,12 @@ import { ChildCard } from './ChildCard';
 import { ChildDetailModal } from './ChildDetailModal';
 import { SponsorshipConfirmationModal } from './SponsorshipConfirmationModal';
 
+// Catálogo público de niños disponibles para apadrinar.
+// Permite buscar y filtrar por edad, género, municipio y texto, con paginación
+// y dos vistas (grid/lista). Se integra con SponsorshipContext para aplicar
+// filtros sobre los datos mockeados y abre modales para ver detalle o iniciar
+// el proceso de apadrinamiento.
+
 const MUNICIPALITIES = [
   'Armenia',
   'Calarcá',

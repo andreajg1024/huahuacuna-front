@@ -31,6 +31,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area
 } from 'recharts';
 
+// Reportes financieros de donaciones monetarias.
+// Muestra indicadores clave, evolución mensual, desglose por método de pago
+// y programa, ranking de donantes y panel de filtros para explorar el
+// comportamiento de las donaciones usando datos de ReportsContext y DonationsContext.
+
 interface DonationReportsProps {
   onNavigate?: (page: string) => void;
 }

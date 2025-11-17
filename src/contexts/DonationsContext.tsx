@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// Contexto central para toda la lógica de donaciones.
+// Administra donaciones monetarias y en especie en memoria, incluyendo
+// generación de IDs/transacciones, cálculo de totales y estadísticas por
+// destino/mes, y reglas como la emisión de certificados tributarios.
+
 // Types
 export type DonationStatus = 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada' | 'reembolsada';
 export type DonationType = 'monetaria' | 'especie';

@@ -10,6 +10,11 @@ import {
 import { useVolunteering } from '../../contexts/VolunteeringContext';
 import { VolunteerApplicationForm } from './VolunteerApplicationForm';
 
+// Landing pública de voluntariado.
+// Presenta información de qué es el voluntariado, beneficios, áreas de apoyo,
+// requisitos y testimonios, y conecta con el formulario de postulación usando
+// contenido dinámico definido en VolunteeringContext.
+
 export const PublicVolunteeringPage: React.FC = () => {
   const { pageContent } = useVolunteering();
   const [showForm, setShowForm] = useState(false);

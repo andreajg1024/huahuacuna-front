@@ -19,6 +19,11 @@ import { useSponsorship } from '../../contexts/SponsorshipContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { ChatInterface } from './ChatInterface';
 
+// Vista principal del padrino sobre su niño apadrinado.
+// Muestra un banner con foto e información clave, beneficios del programa,
+// actividad reciente y accesos rápidos a chat, bitácora y descargas. Si el
+// usuario aún no apadrina, redirige al catálogo para iniciar el proceso.
+
 interface SponsoredChildProfilePageProps {
   onNavigate: (page: string) => void;
 }

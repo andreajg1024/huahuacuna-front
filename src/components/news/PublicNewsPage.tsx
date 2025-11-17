@@ -9,6 +9,11 @@ import {
 import { useNews, type NewsCategory } from '../../contexts/NewsContext';
 import { NewsArticleDetail } from './NewsArticleDetail';
 
+// Blog público de la fundación.
+// Lista noticias publicadas con buscador, filtros por categoría, ordenamiento
+// por relevancia/popularidad y sección de artículos destacados; al seleccionar
+// una noticia se navega a una vista de detalle basada en el slug.
+
 export const PublicNewsPage: React.FC = () => {
   const { getPublishedArticles, getArticlesByCategory, searchArticles, categories, getFeaturedArticles } = useNews();
   const [searchQuery, setSearchQuery] = useState('');

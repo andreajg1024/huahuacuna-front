@@ -11,6 +11,11 @@ import { MonetaryDonationForm } from './MonetaryDonationForm';
 import { InKindDonationForm } from './InKindDonationForm';
 import { useDonations } from '../../contexts/DonationsContext';
 
+// Landing pública de donaciones (dinero y en especie).
+// Presenta el impacto de las donaciones, ejemplos de uso del dinero, destinos
+// posibles, testimonios y FAQs, y conecta con los formularios de donación
+// monetaria y en especie usando totales calculados desde DonationsContext.
+
 export const PublicDonationsPage: React.FC = () => {
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [showInKindForm, setShowInKindForm] = useState(false);

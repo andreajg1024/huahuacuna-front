@@ -23,6 +23,11 @@ import {
   Area, AreaChart
 } from 'recharts';
 
+// Panel de reportes globales para administradores y super admins.
+// Consolida KPIs de apadrinamientos, donaciones, voluntariado y proyectos,
+// mostrando series de tiempo, distribuciones y actividad reciente. Todo se
+// alimenta con datos agregados desde ReportsContext en memoria.
+
 interface AdministrativeDashboardProps {
   onNavigate?: (page: string) => void;
 }

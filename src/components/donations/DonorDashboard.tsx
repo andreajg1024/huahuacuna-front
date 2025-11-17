@@ -14,6 +14,11 @@ import {
 import { useDonations } from '../../contexts/DonationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Panel privado del donante con su historial de aportes.
+// Muestra métricas personales (total donado, número de donaciones, nivel),
+// filtros por fecha y buscador por transacción, además de la tabla con cada
+// donación y accesos simulados a recibos y certificados tributarios.
+
 export const DonorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { getDonationsByDonor, getTotalDonated, needsCertificate } = useDonations();

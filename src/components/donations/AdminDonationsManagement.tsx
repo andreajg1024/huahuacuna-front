@@ -19,6 +19,11 @@ import {
 } from 'lucide-react';
 import { useDonations, type DonationStatus } from '../../contexts/DonationsContext';
 
+// Módulo interno para administrar todas las donaciones.
+// Ofrece estadísticas mensuales, filtros por estado y búsqueda, pestañas por
+// tipo de estado y exportación a CSV; se apoya completamente en DonationsContext
+// para consultar y resumir el listado de donaciones en memoria.
+
 export const AdminDonationsManagement: React.FC = () => {
   const { donations, getDonationCount, getTotalDonated, getDonationsByStatus } = useDonations();
   const [searchQuery, setSearchQuery] = useState('');

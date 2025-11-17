@@ -50,6 +50,11 @@ import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
+// Panel interno para la gestión de proyectos y eventos de la fundación.
+// Permite listar, buscar, filtrar por estado, cambiar entre vista lista/cuadricula,
+// crear/editar proyectos y ejecutar acciones administrativas (duplicar, archivar,
+// eliminar). Se apoya en ProjectsContext para manipular los datos en memoria.
+
 type ViewMode = 'grid' | 'list';
 
 interface ProjectManagementPageProps {

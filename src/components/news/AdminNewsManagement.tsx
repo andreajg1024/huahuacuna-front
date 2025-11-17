@@ -38,6 +38,11 @@ import { useNews, type NewsStatus } from '../../contexts/NewsContext';
 import { NewsFormPage } from './NewsFormPage';
 import { toast } from 'sonner';
 
+// Panel de gestión del blog para administradores.
+// Permite crear, editar, filtrar y archivar noticias, además de exportar un
+// listado CSV. Calcula métricas rápidas (publicadas, borradores, vistas) a
+// partir de los artículos almacenados en NewsContext.
+
 interface AdminNewsManagementProps {
   onNavigate?: (page: string) => void;
 }

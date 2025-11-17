@@ -14,6 +14,11 @@ import { useSponsorship } from '../../contexts/SponsorshipContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
+// Componente de mensajería entre padrino y coordinadora.
+// Opera como un chat en tiempo real simulado: agrupa mensajes por fecha,
+// marca mensajes como leídos cuando se abre y maneja auto-scroll, escritura
+// y validaciones básicas de longitud para mantener una experiencia fluida.
+
 interface ChatInterfaceProps {
   sponsorshipId: string;
   childName: string;

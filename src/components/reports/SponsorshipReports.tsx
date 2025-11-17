@@ -31,6 +31,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
+// Reportes detallados del programa de apadrinamiento.
+// Combina KPIs, series de tiempo y distribuciones (por ubicación, edad,
+// género y tipo de patrocinador) usando datos provenientes de ReportsContext
+// y SponsorshipContext, además de filtros básicos y acciones de exportación
+// simuladas a PDF/Excel.
+
 interface SponsorshipReportsProps {
   onNavigate?: (page: string) => void;
 }
