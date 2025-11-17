@@ -211,23 +211,7 @@ export function ProgramsSection() {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="mt-20 text-center">
-          <h2 className="text-gray-900 mb-4">¿Listo para Hacer la Diferencia?</h2>
-          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-            Tu apoyo puede transformar la vida de un niño. Únete a nuestra familia de padrinos 
-            y sé parte del cambio.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-6 text-lg">
-              <Heart className="w-5 h-5 mr-2" />
-              Apadrinar Ahora
-            </Button>
-            <Button variant="outline" className="border-2 border-gray-300 px-8 py-6 text-lg">
-              Conocer Más
-            </Button>
-          </div>
-        </div>
+                    
       </div>
     </div>
   );
