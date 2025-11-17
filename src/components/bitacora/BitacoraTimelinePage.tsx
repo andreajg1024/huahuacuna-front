@@ -61,9 +61,10 @@ export function BitacoraTimelinePage({ childId }: BitacoraTimelinePageProps) {
     totalFotos: 0,
     totalVideos: 0,
     mesesDocumentados: 0,
-  };
+    ultimaActualizacion: '',
+  } as any;
 
-  const isAdmin = user?.rol === 'admin' || user?.rol === 'superadmin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -801,4 +802,5 @@ export function BitacoraTimelinePage({ childId }: BitacoraTimelinePageProps) {
     </div>
   );
 }
+
 

@@ -204,8 +204,8 @@ export function SponsorshipProvider({ children }: { children: ReactNode }) {
   const [isTyping, setIsTyping] = useState(false);
 
   // Get sponsored child for current user
-  const mySponsorship = user?.role === 'padrino' 
-    ? sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo')
+  const mySponsorship: Sponsorship | null = user?.role === 'padrino' 
+    ? sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo') || null
     : null;
 
   const mySponsoredChild = mySponsorship 

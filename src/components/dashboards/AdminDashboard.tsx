@@ -34,6 +34,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     { label: 'Consultas sin Resolver', value: '12', icon: FileText, color: 'from-blue-400 to-blue-500' },
   ];
 
+  // Módulos disponibles para el rol ADMIN. El permiso proviene de AuthContext.
   const modules = [
     {
       title: 'Gestión de Usuarios',
@@ -41,7 +42,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       icon: Users,
       color: 'from-blue-400 to-blue-500',
       permission: 'usuarios',
-      onClick: () => {},
+      onClick: () => onNavigate('admin-management'),
     },
     {
       title: 'Gestión de Niños',
@@ -57,7 +58,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       icon: HandHeart,
       color: 'from-green-400 to-green-500',
       permission: 'apadrinamientos',
-      onClick: () => {},
+      onClick: () => onNavigate('catalog'),
     },
     {
       title: 'Bitácoras',
@@ -73,7 +74,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       icon: Calendar,
       color: 'from-purple-400 to-purple-500',
       permission: 'eventos',
-      onClick: () => {},
+      onClick: () => onNavigate('eventos'),
     },
     {
       title: 'Donaciones',

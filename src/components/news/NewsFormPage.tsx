@@ -32,7 +32,7 @@ export const NewsFormPage: React.FC<NewsFormPageProps> = ({ articleId, onNavigat
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const autoSaveTimeout = useRef<NodeJS.Timeout>();
+  const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -255,7 +255,7 @@ export const NewsFormPage: React.FC<NewsFormPageProps> = ({ articleId, onNavigat
         ogImage: formData.ogImage || formData.featuredImage,
         authorId: user?.id || '',
         authorName: user?.nombre || '',
-        authorAvatar: user?.avatar,
+        authorAvatar: (user as any)?.avatar,
         source: formData.source,
         imageCredits: formData.imageCredits,
         status: formData.status,

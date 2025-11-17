@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Bell, LogOut, Settings, User, Heart, Menu, X } from 'lucide-react';
+import { Bell, LogOut, Settings, User, Menu, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -66,8 +66,13 @@ export function DashboardLayout({ children, onNavigate }: DashboardLayoutProps) 
                 onClick={() => onNavigate?.('dashboard')}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
-                <div className={`w-10 h-10 bg-gradient-to-br ${theme.primary} rounded-full flex items-center justify-center`}>
-                  <Heart className="w-5 h-5 text-white fill-white" />
+                {/* Logo: imagen estática logo.png en la carpeta public */}
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center">
+                  <img
+                    src="/logo.png"
+                    alt="Fundación Huahuacuna"
+                    className="w-9 h-9 object-contain"
+                  />
                 </div>
                 <div className="hidden sm:block">
                   <div className="text-gray-900" style={{ fontWeight: 700 }}>

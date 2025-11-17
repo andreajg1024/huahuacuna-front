@@ -33,6 +33,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
     { label: 'Mensajes Enviados', value: '45', icon: MessageCircle, color: 'from-blue-400 to-blue-500' },
   ];
 
+  // Accesos rápidos para el padrino a las secciones clave de su experiencia.
   const modules = [
     {
       title: 'Mi Perfil',
@@ -69,7 +70,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
       icon: MessageCircle,
       color: 'from-blue-400 to-blue-500',
       badge: '3',
-      onClick: () => {},
+      onClick: () => onNavigate('messages'),
     },
     {
       title: 'Mis Donaciones',
@@ -84,14 +85,14 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
       icon: Calendar,
       color: 'from-purple-400 to-purple-500',
       badge: '2',
-      onClick: () => {},
+      onClick: () => onNavigate('eventos'),
     },
     {
       title: 'Documentos',
       description: 'Certificados y reportes',
       icon: FileText,
       color: 'from-gray-400 to-gray-500',
-      onClick: () => {},
+      onClick: () => onNavigate('my-donations'),
     },
   ];
 
@@ -273,7 +274,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
               <Button 
                 variant="ghost" 
                 className="w-full mt-4 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                onClick={() => {}}
+                onClick={() => onNavigate('eventos')}
               >
                 Ver Todos los Eventos
                 <ChevronRight className="w-4 h-4 ml-2" />
@@ -301,7 +302,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
               <Button 
                 variant="ghost" 
                 className="w-full mt-4 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                onClick={() => {}}
+                onClick={() => onNavigate('bitacora')}
               >
                 Ver Todas las Actualizaciones
                 <ChevronRight className="w-4 h-4 ml-2" />

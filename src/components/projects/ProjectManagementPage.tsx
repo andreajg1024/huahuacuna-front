@@ -371,7 +371,7 @@ export const ProjectManagementPage: React.FC<ProjectManagementPageProps> = ({ on
                     key={project.id}
                     project={project}
                     onViewDetails={handleViewDetails}
-                    onEdit={handleEdit}
+                    onEdit={(p) => handleEdit(p.id)}
                     showAdminActions
                     variant="grid"
                   />

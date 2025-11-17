@@ -31,13 +31,15 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
     { label: 'Eventos este Mes', value: '12', icon: Calendar, color: 'from-purple-400 to-purple-500' },
   ];
 
+  // Definición de los módulos principales del panel de SUPER ADMIN.
+  // Cada módulo navega a una "page" manejada por App.tsx mediante onNavigate.
   const modules = [
     {
       title: 'Gestión de Usuarios',
       description: 'Administrar padrinos y usuarios del sistema',
       icon: Users,
       color: 'from-blue-400 to-blue-500',
-      onClick: () => onNavigate('users'),
+      onClick: () => onNavigate('admin-management'),
     },
     {
       title: 'Gestión de Administradores',
@@ -51,28 +53,28 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       description: 'Perfiles y seguimiento de niños beneficiarios',
       icon: Heart,
       color: 'from-pink-400 to-pink-500',
-      onClick: () => {},
+      onClick: () => onNavigate('children-management'),
     },
     {
       title: 'Apadrinamientos',
       description: 'Asignar y gestionar relaciones padrino-ahijado',
       icon: HandHeart,
       color: 'from-green-400 to-green-500',
-      onClick: () => {},
+      onClick: () => onNavigate('catalog'),
     },
     {
       title: 'Bitácoras',
       description: 'Registros de progreso y desarrollo',
       icon: BookOpen,
       color: 'from-amber-400 to-amber-500',
-      onClick: () => {},
+      onClick: () => onNavigate('bitacora'),
     },
     {
       title: 'Eventos',
       description: 'Planificar y gestionar eventos',
       icon: Calendar,
       color: 'from-purple-400 to-purple-500',
-      onClick: () => {},
+      onClick: () => onNavigate('eventos'),
     },
     {
       title: 'Proyectos',
@@ -128,14 +130,14 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       description: 'Análisis y métricas del sistema',
       icon: BarChart3,
       color: 'from-orange-400 to-orange-500',
-      onClick: () => {},
+      onClick: () => onNavigate('admin-dashboard'),
     },
     {
       title: 'Configuración del Sistema',
       description: 'Parámetros y ajustes generales',
       icon: Settings,
       color: 'from-gray-400 to-gray-500',
-      onClick: () => {},
+      onClick: () => onNavigate('system-settings'),
     },
   ];
 
@@ -229,7 +231,7 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
             <Button 
               variant="ghost" 
               className="w-full mt-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              onClick={() => {}}
+              onClick={() => onNavigate('admin-dashboard')}
             >
               Ver Toda la Actividad
               <FileText className="w-4 h-4 ml-2" />

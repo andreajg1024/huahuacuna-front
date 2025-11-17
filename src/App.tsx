@@ -64,6 +64,10 @@ import { AdministrativeDashboard } from './components/reports/AdministrativeDash
 import { SponsorshipReports } from './components/reports/SponsorshipReports';
 import { DonationReports } from './components/reports/DonationReports';
 
+// Messaging & settings
+import { MessagesPage } from './components/sponsorship/MessagesPage';
+import { SystemSettingsPage } from './components/admin/SystemSettingsPage';
+
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
@@ -115,10 +119,11 @@ function AppContent() {
           return <ProfilePage />;
         
         case 'admin-management':
-          if (user.role === 'super_admin') {
+          // Gestión de administradores / usuarios internos
+          if (user.role === 'super_admin' || user.role === 'admin') {
             return <AdminManagementPage />;
           }
-          // Redirect to dashboard if not super admin
+          // Redirect to dashboard if no permisos
           setCurrentPage('dashboard');
           return null;
         
@@ -206,6 +211,26 @@ function AppContent() {
         case 'donation-reports':
           if (user.role === 'admin' || user.role === 'super_admin') {
             return <DonationReports onNavigate={handleNavigate} />;
+          }
+          setCurrentPage('dashboard');
+          return null;
+        
+        case 'eventos':
+          // Vista de eventos reutiliza la sección pública pero dentro del layout privado
+          return <EventsSection />;
+        
+        case 'messages':
+          // Centro de mensajes solo aplica para padrinos
+          if (user.role === 'padrino') {
+            return <MessagesPage onNavigate={handleNavigate} />;
+          }
+          setCurrentPage('dashboard');
+          return null;
+        
+        case 'system-settings':
+          // Configuración avanzada solo para super admin (se puede abrir a admin en el futuro)
+          if (user.role === 'super_admin') {
+            return <SystemSettingsPage onNavigate={handleNavigate} />;
           }
           setCurrentPage('dashboard');
           return null;

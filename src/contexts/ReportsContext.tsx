@@ -267,7 +267,7 @@ export const ReportsProvider: React.FC<{ children: ReactNode }> = ({ children })
   const getProjectKPIs = (period = 'month') => {
     const projectsData = projects || [];
     const active = projectsData.filter(p => p.status === 'activo');
-    const completed = projectsData.filter(p => p.status === 'completado');
+    const completed = projectsData.filter(p => p.status === 'finalizado');
     const total = projectsData.length;
     const completionRate = total > 0 ? (completed.length / total * 100) : 0;
     
@@ -501,10 +501,11 @@ export const ReportsProvider: React.FC<{ children: ReactNode }> = ({ children })
     sponsorships
       .slice(0, 3)
       .forEach(s => {
+        const sponsorName = (s as any).nombrePadrino || 'Nuevo padrino';
         activities.push({
           id: `sponsorship-${s.id}`,
           type: 'sponsorship',
-          message: `Nuevo apadrinamiento: ${s.nombrePadrino}`,
+          message: `Nuevo apadrinamiento: ${sponsorName}`,
           timestamp: s.fechaInicio,
           icon: '💝'
         });
@@ -529,11 +530,13 @@ export const ReportsProvider: React.FC<{ children: ReactNode }> = ({ children })
     articles
       .slice(0, 2)
       .forEach(a => {
+        const title = (a as any).titulo || (a as any).title || 'Nueva noticia';
+        const publishedAt = (a as any).fechaPublicacion || (a as any).publishedAt || new Date().toISOString();
         activities.push({
           id: `news-${a.id}`,
           type: 'news',
-          message: `Nueva noticia publicada: "${a.titulo}"`,
-          timestamp: a.fechaPublicacion,
+          message: `Nueva noticia publicada: "${title}"`,
+          timestamp: publishedAt,
           icon: '📰'
         });
       });
@@ -545,10 +548,10 @@ export const ReportsProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const value: ReportsContextType = {
-    getSponsorshipKPIs,
-    getDonationKPIs,
-    getVolunteerKPIs,
-    getProjectKPIs,
+    getSponsorshipKPIs: getSponsorshipKPIs as ReportsContextType['getSponsorshipKPIs'],
+    getDonationKPIs: getDonationKPIs as ReportsContextType['getDonationKPIs'],
+    getVolunteerKPIs: getVolunteerKPIs as ReportsContextType['getVolunteerKPIs'],
+    getProjectKPIs: getProjectKPIs as ReportsContextType['getProjectKPIs'],
     getSponsorshipTimeSeries,
     getDonationTimeSeries,
     getSponsorshipByLocation,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Heart, UserCircle, ChevronDown } from 'lucide-react';
+import { Menu, X, UserCircle, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -41,8 +41,13 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
             onClick={() => onNavigate('home')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center">
-              <Heart className="w-7 h-7 text-white fill-white" />
+            {/* Logo principal del sitio: utiliza logo.png desde /public */}
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="Fundación Huahuacuna"
+                className="w-11 h-11 object-contain"
+              />
             </div>
             <div className="hidden sm:block">
               <div className="text-gray-900" style={{ fontSize: '1.25rem', fontWeight: 600 }}>

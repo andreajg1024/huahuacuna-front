@@ -443,7 +443,7 @@ export const SponsorshipReports: React.FC<SponsorshipReportsProps> = ({ onNaviga
                 </TableHeader>
                 <TableBody>
                   {sponsorships.slice(0, 10).map((sponsorship) => {
-                    const child = children.find(c => c.id === sponsorship.ninoId);
+                    const child = children.find(c => c.id === (sponsorship as any).childId);
                     const startDate = new Date(sponsorship.fechaInicio);
                     const now = new Date();
                     const monthsDiff = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
@@ -453,7 +453,7 @@ export const SponsorshipReports: React.FC<SponsorshipReportsProps> = ({ onNaviga
                         <TableCell>{child?.nombre || 'N/A'}</TableCell>
                         <TableCell>{child?.edad || 'N/A'}</TableCell>
                         <TableCell>{child?.municipio || 'N/A'}</TableCell>
-                        <TableCell>{sponsorship.nombrePadrino}</TableCell>
+                        <TableCell>{(sponsorship as any).nombrePadrino || 'N/A'}</TableCell>
                         <TableCell>
                           {new Date(sponsorship.fechaInicio).toLocaleDateString('es-CO')}
                         </TableCell>
