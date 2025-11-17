@@ -25,7 +25,8 @@
     },
     "types": [
       "node",
-      "react"
+      "react",
+      "react-dom"
     ],
     "incremental": true
   },
