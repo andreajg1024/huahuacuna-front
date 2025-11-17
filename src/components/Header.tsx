@@ -37,18 +37,20 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo and Name */}
-          <button 
+          <button
             onClick={() => onNavigate('home')}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            {/* Logo principal del sitio: utiliza logo.png desde /public */}
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center">
+            {/* Logo cuadrado corregido */}
+            <div className="w-12 h-12 flex items-center justify-center !rounded-none">
               <img
                 src="/logo.png"
                 alt="Fundación Huahuacuna"
-                className="w-11 h-11 object-contain"
+                className="w-full h-full object-contain !rounded-none"
+                style={{ borderRadius: 0 }}
               />
             </div>
+
             <div className="hidden sm:block">
               <div className="text-gray-900" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
                 Fundación Huahuacuna
@@ -71,7 +73,7 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
                 {link.label}
               </button>
             ))}
-            
+
             {/* More Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -145,9 +147,7 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
                   setMobileMenuOpen(false);
                 }}
                 className={`block w-full text-left py-2 transition-colors ${
-                  currentSection === link.id
-                    ? 'text-amber-600 font-medium'
-                    : 'text-gray-700'
+                  currentSection === link.id ? 'text-amber-600 font-medium' : 'text-gray-700'
                 }`}
               >
                 {link.label}
@@ -190,4 +190,3 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
     </header>
   );
 }
-

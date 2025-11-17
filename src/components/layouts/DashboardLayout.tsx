@@ -66,14 +66,16 @@ export function DashboardLayout({ children, onNavigate }: DashboardLayoutProps) 
                 onClick={() => onNavigate?.('dashboard')}
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
               >
-                {/* Logo: imagen estática logo.png en la carpeta public */}
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center">
+                {/* Logo corregido: SIN redondeado */}
+                <div className="w-10 h-10 flex items-center justify-center !rounded-none overflow-visible">
                   <img
                     src="/logo.png"
                     alt="Fundación Huahuacuna"
-                    className="w-9 h-9 object-contain"
+                    className="w-full h-full object-contain !rounded-none !rounded-[0px]"
+                    style={{ borderRadius: 0 }}
                   />
                 </div>
+
                 <div className="hidden sm:block">
                   <div className="text-gray-900" style={{ fontWeight: 700 }}>
                     Fundación Huahuacuna
@@ -146,4 +148,3 @@ export function DashboardLayout({ children, onNavigate }: DashboardLayoutProps) 
     </div>
   );
 }
-
