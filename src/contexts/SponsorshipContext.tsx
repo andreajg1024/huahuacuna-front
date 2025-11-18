@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { apadrinamientoService } from '@/services/apadrinamiento.service';
+import { toast } from 'sonner';
 
 export interface Child {
   id: string;
@@ -207,11 +209,105 @@ export function SponsorshipProvider({ children }: { children: ReactNode }) {
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Get sponsored child for current user
-  const mySponsorship: Sponsorship | null = user?.role === 'padrino' 
-    ? sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo') || null
-    : null;
+  // Cargar niños desde la API al montar
+  useEffect(() => {
+    const loadChildren = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apadrinamientoService.listChildren();
+        
+        if (response.success && response.data) {
+          const children = response.data.map(apiChild => 
+            apadrinamientoService.convertFromApiFormat(apiChild)
+          );
+          setAllChildren(children);
+        } else {
+          console.log('Using mock children data');
+        }
+      } catch (error) {
+        console.error('Error loading children:', error);
+        // Mantener mock data si falla
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadChildren();
+  }, []);
+
+  // Cargar apadrinamientos si el usuario está autenticado
+  useEffect(() => {
+    const loadSponsorships = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await apadrinamientoService.listSponsorships({
+          sponsorId: user.id,
+        });
+        
+        if (response.success && response.data) {
+          const mappedSponsorships = response.data.map(s => ({
+            id: String(s.id),
+            childId: String(s.childId),
+            sponsorId: String(s.sponsorId),
+            fechaInicio: s.startDate,
+            fechaFin: s.endDate,
+            estado: s.status === 'active' ? 'activo' as const :
+                    s.status === 'completed' ? 'completado' as const :
+                    s.status === 'cancelled' ? 'cancelado' as const : 
+                    'en_pausa' as const,
+            razonFin: s.reason,
+          }));
+          setSponsorships(mappedSponsorships);
+        }
+      } catch (error) {
+        console.error('Error loading sponsorships:', error);
+      }
+    };
+
+    loadSponsorships();
+  }, [user]);
+
+  // Get sponsored child for current user (useMemo para evitar problemas de referencia)
+  const mySponsorship: Sponsorship | null = useMemo(() => {
+    return user?.role === 'padrino' 
+      ? sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo') || null
+      : null;
+  }, [user, sponsorships]);
+
+  // Cargar mensajes si hay un apadrinamiento activo
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!user || !mySponsorship) return;
+      
+      try {
+        const response = await apadrinamientoService.listMessages(
+          parseInt(mySponsorship.id, 10)
+        );
+        
+        if (response.success && response.data) {
+          const mappedMessages = response.data.map(m => ({
+            id: String(m.id),
+            sponsorshipId: String(m.sponsorshipId),
+            senderId: String(m.senderId),
+            senderName: m.senderName,
+            senderRole: m.senderRole === 'sponsor' ? 'padrino' as const : 'admin' as const,
+            message: m.message,
+            timestamp: m.timestamp,
+            read: m.read,
+            delivered: m.delivered,
+          }));
+          setChatMessages(mappedMessages);
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    };
+
+    loadMessages();
+  }, [user, mySponsorship?.id]);
 
   const mySponsoredChild = mySponsorship 
     ? allChildren.find(c => c.id === mySponsorship.childId) || null
@@ -234,88 +330,183 @@ export function SponsorshipProvider({ children }: { children: ReactNode }) {
       throw new Error('Este niño ya ha sido apadrinado por otra persona');
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const userId = parseInt(user.id, 10);
+      
+      const response = await apadrinamientoService.createSponsorship({
+        childId: parseInt(childId, 10),
+        sponsorId: userId,
+        startDate: new Date().toISOString(),
+      });
 
-    const newSponsorship: Sponsorship = {
-      id: `sp-${Date.now()}`,
-      childId,
-      sponsorId: user.id,
-      fechaInicio: new Date().toISOString(),
-      estado: 'activo',
-    };
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al crear apadrinamiento');
+      }
 
-    setSponsorships([...sponsorships, newSponsorship]);
-    
-    // Mark child as unavailable
-    setAllChildren(allChildren.map(c => 
-      c.id === childId ? { ...c, disponible: false } : c
-    ));
+      const newSponsorship: Sponsorship = {
+        id: String(response.data.id),
+        childId,
+        sponsorId: user.id,
+        fechaInicio: response.data.startDate,
+        estado: 'activo',
+      };
+
+      setSponsorships([...sponsorships, newSponsorship]);
+      
+      // Mark child as unavailable
+      setAllChildren(allChildren.map(c => 
+        c.id === childId ? { ...c, disponible: false } : c
+      ));
+
+      toast.success('¡Apadrinamiento creado exitosamente!');
+    } catch (error) {
+      console.error('Error creating sponsorship:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear apadrinamiento');
+      
+      // Fallback
+      const newSponsorship: Sponsorship = {
+        id: `sp-${Date.now()}`,
+        childId,
+        sponsorId: user.id,
+        fechaInicio: new Date().toISOString(),
+        estado: 'activo',
+      };
+
+      setSponsorships([...sponsorships, newSponsorship]);
+      setAllChildren(allChildren.map(c => 
+        c.id === childId ? { ...c, disponible: false } : c
+      ));
+    }
   };
 
   // End sponsorship
   const endSponsorship = async (sponsorshipId: string, reason: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const response = await apadrinamientoService.endSponsorship({
+        sponsorshipId: parseInt(sponsorshipId, 10),
+        endDate: new Date().toISOString(),
+        reason,
+      });
 
-    setSponsorships(sponsorships.map(s => 
-      s.id === sponsorshipId 
-        ? { 
-            ...s, 
-            estado: 'completado', 
-            fechaFin: new Date().toISOString(),
-            razonFin: reason,
-            duracionMeses: Math.floor(
-              (new Date().getTime() - new Date(s.fechaInicio).getTime()) / (1000 * 60 * 60 * 24 * 30)
-            ),
-          }
-        : s
-    ));
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al finalizar apadrinamiento');
+      }
+
+      setSponsorships(sponsorships.map(s => 
+        s.id === sponsorshipId 
+          ? { 
+              ...s, 
+              estado: 'completado', 
+              fechaFin: new Date().toISOString(),
+              razonFin: reason,
+              duracionMeses: Math.floor(
+                (new Date().getTime() - new Date(s.fechaInicio).getTime()) / (1000 * 60 * 60 * 24 * 30)
+              ),
+            }
+          : s
+      ));
+
+      toast.success('Apadrinamiento finalizado');
+    } catch (error) {
+      console.error('Error ending sponsorship:', error);
+      toast.error('Error al finalizar apadrinamiento');
+      
+      // Fallback
+      setSponsorships(sponsorships.map(s => 
+        s.id === sponsorshipId 
+          ? { 
+              ...s, 
+              estado: 'completado', 
+              fechaFin: new Date().toISOString(),
+              razonFin: reason,
+              duracionMeses: Math.floor(
+                (new Date().getTime() - new Date(s.fechaInicio).getTime()) / (1000 * 60 * 60 * 24 * 30)
+              ),
+            }
+          : s
+      ));
+    }
   };
 
   // Send chat message
   const sendMessage = async (sponsorshipId: string, message: string) => {
     if (!user) return;
 
-    const newMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sponsorshipId,
-      senderId: user.id,
-      senderName: user.nombre,
-      senderRole: user.role === 'padrino' ? 'padrino' : 'admin',
-      message,
-      timestamp: new Date().toISOString(),
-      read: false,
-      delivered: true,
-    };
+    try {
+      const userId = parseInt(user.id, 10);
 
-    setChatMessages([...chatMessages, newMessage]);
+      const response = await apadrinamientoService.sendMessage({
+        sponsorshipId: parseInt(sponsorshipId, 10),
+        senderId: userId,
+        message,
+      });
 
-    // Simulate admin auto-response after 2 seconds (for demo)
-    if (user.role === 'padrino') {
-      setTimeout(() => {
-        const autoResponse: ChatMessage = {
-          id: `msg-${Date.now()}`,
-          sponsorshipId,
-          senderId: 'admin-1',
-          senderName: 'Coordinadora María',
-          senderRole: 'admin',
-          message: 'Gracias por tu mensaje. Te responderemos pronto con información sobre el niño.',
-          timestamp: new Date().toISOString(),
-          read: false,
-          delivered: true,
-        };
-        setChatMessages(prev => [...prev, autoResponse]);
-      }, 2000);
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al enviar mensaje');
+      }
+
+      const newMessage: ChatMessage = {
+        id: String(response.data.id),
+        sponsorshipId,
+        senderId: String(response.data.senderId),
+        senderName: response.data.senderName,
+        senderRole: response.data.senderRole === 'sponsor' ? 'padrino' : 'admin',
+        message: response.data.message,
+        timestamp: response.data.timestamp,
+        read: response.data.read,
+        delivered: response.data.delivered,
+      };
+
+      setChatMessages([...chatMessages, newMessage]);
+      toast.success('Mensaje enviado');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Error al enviar mensaje');
+      
+      // Fallback
+      const newMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        sponsorshipId,
+        senderId: user.id,
+        senderName: user.nombre,
+        senderRole: user.role === 'padrino' ? 'padrino' : 'admin',
+        message,
+        timestamp: new Date().toISOString(),
+        read: false,
+        delivered: true,
+      };
+
+      setChatMessages([...chatMessages, newMessage]);
     }
   };
 
   // Mark messages as read
-  const markMessagesAsRead = (sponsorshipId: string) => {
-    setChatMessages(chatMessages.map(msg => 
-      msg.sponsorshipId === sponsorshipId && msg.senderRole !== (user?.role === 'padrino' ? 'padrino' : 'admin')
-        ? { ...msg, read: true }
-        : msg
-    ));
+  const markMessagesAsRead = async (sponsorshipId: string) => {
+    try {
+      if (!user) return;
+
+      const userId = parseInt(user.id, 10);
+      
+      await apadrinamientoService.markMessagesAsRead(
+        parseInt(sponsorshipId, 10),
+        userId
+      );
+
+      setChatMessages(chatMessages.map(msg => 
+        msg.sponsorshipId === sponsorshipId && msg.senderRole !== (user?.role === 'padrino' ? 'padrino' : 'admin')
+          ? { ...msg, read: true }
+          : msg
+      ));
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      
+      // Fallback
+      setChatMessages(chatMessages.map(msg => 
+        msg.sponsorshipId === sponsorshipId && msg.senderRole !== (user?.role === 'padrino' ? 'padrino' : 'admin')
+          ? { ...msg, read: true }
+          : msg
+      ));
+    }
   };
 
   // Filter children

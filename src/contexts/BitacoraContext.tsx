@@ -1,5 +1,8 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { apadrinamientoService } from '@/services/apadrinamiento.service';
+import { bitacoraService } from '@/services/bitacora.service';
+import { toast } from 'sonner';
 
 // Types
 export interface Child {
@@ -287,83 +290,221 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
   };
 
   const addChild = async (childData: Omit<Child, 'id' | 'fechaCreacion'>): Promise<Child> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    const newChild: Child = {
-      ...childData,
-      id: `child-${Date.now()}`,
-      fechaCreacion: new Date().toISOString(),
-    };
+    try {
+      // Convertir datos al formato de la API
+      const dto = apadrinamientoService.convertToApiFormat(childData);
+      
+      // Obtener userId del usuario autenticado
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      
+      if (!userId) {
+        throw new Error('Usuario no autenticado');
+      }
 
-    setChildrenList((prev) => [...prev, newChild]);
-    return newChild;
+      // Llamar al servicio de la API
+      const response = await apadrinamientoService.createChild(dto, userId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al crear el niño');
+      }
+
+      // Convertir respuesta de la API al formato local
+      const newChild = apadrinamientoService.convertFromApiFormat(response.data);
+      
+      // Actualizar estado local
+      setChildrenList((prev) => [...prev, newChild]);
+      
+      toast.success('Niño registrado exitosamente');
+      return newChild;
+    } catch (error) {
+      console.error('Error creating child:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear el niño');
+      
+      // Fallback a mock para desarrollo
+      const newChild: Child = {
+        ...childData,
+        id: `child-${Date.now()}`,
+        fechaCreacion: new Date().toISOString(),
+      };
+      setChildrenList((prev) => [...prev, newChild]);
+      return newChild;
+    }
   };
 
   const updateChild = async (id: string, updates: Partial<Child>) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    setChildrenList((prev) =>
-      prev.map((child) => (child.id === id ? { ...child, ...updates } : child))
-    );
+    try {
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      if (!userId) throw new Error('Usuario no autenticado');
+
+      const dto: any = { id: parseInt(id, 10), ...apadrinamientoService.convertToApiFormat(updates as any) };
+      const response = await apadrinamientoService.updateChild(dto, userId);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al actualizar el niño');
+      }
+
+      setChildrenList((prev) =>
+        prev.map((child) => (child.id === id ? { ...child, ...updates } : child))
+      );
+      
+      toast.success('Niño actualizado exitosamente');
+    } catch (error) {
+      console.error('Error updating child:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar el niño');
+      
+      // Fallback
+      setChildrenList((prev) =>
+        prev.map((child) => (child.id === id ? { ...child, ...updates } : child))
+      );
+    }
   };
 
   const deleteChild = async (id: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    setChildrenList((prev) => prev.filter((child) => child.id !== id));
-    // Also delete entries
-    setEntries((prev) => {
-      const newEntries = { ...prev };
-      delete newEntries[id];
-      return newEntries;
-    });
+    try {
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      if (!userId) throw new Error('Usuario no autenticado');
+
+      const response = await apadrinamientoService.deleteChild(parseInt(id, 10), userId);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al eliminar el niño');
+      }
+
+      setChildrenList((prev) => prev.filter((child) => child.id !== id));
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        delete newEntries[id];
+        return newEntries;
+      });
+      
+      toast.success('Niño eliminado exitosamente');
+    } catch (error) {
+      console.error('Error deleting child:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar el niño');
+      
+      // Fallback
+      setChildrenList((prev) => prev.filter((child) => child.id !== id));
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        delete newEntries[id];
+        return newEntries;
+      });
+    }
   };
 
   const addEntry = async (entryData: Omit<BitacoraEntry, 'id' | 'fechaPublicacion' | 'uploadedBy' | 'uploadedByName'>) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    const newEntry: BitacoraEntry = {
-      ...entryData,
-      id: `entry-${Date.now()}`,
-      fechaPublicacion: new Date().toISOString(),
-      uploadedBy: user?.id || 'admin-1',
-      uploadedByName: user?.nombre || 'Admin',
-    };
+    try {
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      if (!userId) throw new Error('Usuario no autenticado');
 
-    setEntries((prev) => ({
-      ...prev,
-      [entryData.childId]: [...(prev[entryData.childId] || []), newEntry],
-    }));
+      const dto = bitacoraService.convertEntryToApiFormat(entryData as any);
+      const response = await bitacoraService.createEntry(dto, userId);
+      
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al crear la entrada');
+      }
+
+      const newEntry = bitacoraService.convertEntryFromApiFormat(response.data);
+      
+      setEntries((prev) => ({
+        ...prev,
+        [entryData.childId]: [...(prev[entryData.childId] || []), newEntry],
+      }));
+      
+      toast.success('Entrada creada exitosamente');
+    } catch (error) {
+      console.error('Error creating entry:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear la entrada');
+      
+      // Fallback
+      const newEntry: BitacoraEntry = {
+        ...entryData,
+        id: `entry-${Date.now()}`,
+        fechaPublicacion: new Date().toISOString(),
+        uploadedBy: user?.id || 'admin-1',
+        uploadedByName: user?.nombre || 'Admin',
+      };
+
+      setEntries((prev) => ({
+        ...prev,
+        [entryData.childId]: [...(prev[entryData.childId] || []), newEntry],
+      }));
+    }
   };
 
   const updateEntry = async (id: string, updates: Partial<BitacoraEntry>) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    setEntries((prev) => {
-      const newEntries = { ...prev };
-      Object.keys(newEntries).forEach((childId) => {
-        newEntries[childId] = newEntries[childId].map((entry) =>
-          entry.id === id ? { ...entry, ...updates } : entry
-        );
+    try {
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      if (!userId) throw new Error('Usuario no autenticado');
+
+      const dto: any = { id: parseInt(id, 10), ...bitacoraService.convertEntryToApiFormat(updates as any) };
+      const response = await bitacoraService.updateEntry(dto, userId);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al actualizar la entrada');
+      }
+
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        Object.keys(newEntries).forEach((childId) => {
+          newEntries[childId] = newEntries[childId].map((entry) =>
+            entry.id === id ? { ...entry, ...updates } : entry
+          );
+        });
+        return newEntries;
       });
-      return newEntries;
-    });
+      
+      toast.success('Entrada actualizada exitosamente');
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar la entrada');
+      
+      // Fallback
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        Object.keys(newEntries).forEach((childId) => {
+          newEntries[childId] = newEntries[childId].map((entry) =>
+            entry.id === id ? { ...entry, ...updates } : entry
+          );
+        });
+        return newEntries;
+      });
+    }
   };
 
   const deleteEntry = async (id: string, reason: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // Soft delete - in real app, would mark as deleted in DB
-    console.log(`Deleting entry ${id}. Reason: ${reason}`);
-    
-    setEntries((prev) => {
-      const newEntries = { ...prev };
-      Object.keys(newEntries).forEach((childId) => {
-        newEntries[childId] = newEntries[childId].filter((entry) => entry.id !== id);
+    try {
+      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      if (!userId) throw new Error('Usuario no autenticado');
+
+      const response = await bitacoraService.deleteEntry(parseInt(id, 10), userId, reason);
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Error al eliminar la entrada');
+      }
+
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        Object.keys(newEntries).forEach((childId) => {
+          newEntries[childId] = newEntries[childId].filter((entry) => entry.id !== id);
+        });
+        return newEntries;
       });
-      return newEntries;
-    });
+      
+      toast.success('Entrada eliminada exitosamente');
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al eliminar la entrada');
+      
+      // Fallback
+      setEntries((prev) => {
+        const newEntries = { ...prev };
+        Object.keys(newEntries).forEach((childId) => {
+          newEntries[childId] = newEntries[childId].filter((entry) => entry.id !== id);
+        });
+        return newEntries;
+      });
+    }
   };
 
   const uploadFiles = async (files: File[], metadata: any): Promise<string[]> => {
