@@ -14,6 +14,13 @@ export interface ApiResponse<T = any> {
   success: boolean;
 }
 
+export interface ApiError {
+  message: string;
+  code?: string;
+  statusCode?: number;
+  details?: any;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -56,11 +63,21 @@ export enum KafkaTopic {
   MESSAGE_LIST = 'message_list',
   MESSAGE_MARK_READ = 'message_mark_read',
   
+  // Activity Logs
+  ACTIVITY_LOG_CREATE = 'apadrinamiento_activity_logs_create',
+  ACTIVITY_LOG_GET_BY_CHILD = 'apadrinamiento_activity_logs_get_by_child',
+  ACTIVITY_LOG_GET_BY_SPONSORSHIP = 'apadrinamiento_activity_logs_get_by_sponsorship',
+  ACTIVITY_LOG_GET_RECENT = 'apadrinamiento_activity_logs_get_recent',
+  
   // Projects
-  PROJECT_CREATE = 'project_create',
-  PROJECT_UPDATE = 'project_update',
-  PROJECT_DELETE = 'project_delete',
-  PROJECT_LIST = 'project_list',
+  PROJECT_CREATE = 'apadrinamiento_projects_create',
+  PROJECT_UPDATE = 'apadrinamiento_projects_update',
+  PROJECT_DELETE = 'apadrinamiento_projects_delete',
+  PROJECT_LIST = 'apadrinamiento_projects_list',
+  PROJECT_GET_BY_ID = 'apadrinamiento_projects_get_by_id',
+  PROJECT_ADD_CHILD = 'apadrinamiento_projects_add_child',
+  PROJECT_REMOVE_CHILD = 'apadrinamiento_projects_remove_child',
+  PROJECT_UPDATE_STATUS = 'apadrinamiento_projects_update_status',
   
   // Volunteers
   VOLUNTEER_REGISTER = 'volunteer_register',
@@ -89,6 +106,103 @@ export enum KafkaTopic {
   BITACORA_ENTRY_UPDATE = 'bitacora_entry_update',
   BITACORA_ENTRY_DELETE = 'bitacora_entry_delete',
   BITACORA_ENTRY_LIST = 'bitacora_entry_list',
+}
+
+// ============================================================================
+// AUTHENTICATION & USERS
+// ============================================================================
+
+export type UserRole = 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
+
+// Register Padrino
+export interface RegisterPadrinoDTO {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  documentId: string;
+  address: string;
+}
+
+// Login
+export interface LoginDTO {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: UserResponse;
+  accessToken: string;
+  refreshToken: string;
+}
+
+// User Response
+export interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  documentId?: string;
+  address?: string;
+  role: UserRole;
+  status: UserStatus;
+  avatar?: string;
+  emailVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Verify Email
+export interface VerifyEmailDTO {
+  token: string;
+}
+
+// Request Password Reset
+export interface RequestPasswordResetDTO {
+  email: string;
+}
+
+// Reset Password
+export interface ResetPasswordDTO {
+  token: string;
+  newPassword: string;
+}
+
+// Refresh Token
+export interface RefreshTokenDTO {
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Logout
+export interface LogoutDTO {
+  refreshToken: string;
+}
+
+// Update Profile (Padrino)
+export interface UpdateProfileDTO {
+  phone?: string;
+  address?: string;
+  avatar?: string;
+}
+
+// Create Admin (Super Admin only)
+export interface CreateAdminDTO {
+  name: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'SUPER_ADMIN';
+}
+
+// Update Admin (Super Admin only)
+export interface UpdateAdminDTO {
+  name?: string;
+  status?: UserStatus;
 }
 
 // ============================================================================
@@ -310,45 +424,6 @@ export interface MessageResponse {
 }
 
 // ============================================================================
-// PROJECTS
-// ============================================================================
-
-export interface CreateProjectDTO {
-  title: string;
-  shortDescription: string;
-  fullDescription: string;
-  mainGoal: string;
-  specificObjectives: string[];
-  beneficiaries: {
-    count: number;
-    description: string;
-  };
-  startDate: string;
-  endDate: string;
-  status: 'draft' | 'active' | 'completed' | 'archived';
-  mainImage: string;
-  gallery?: { url: string; caption?: string }[];
-  needsVolunteers: boolean;
-  volunteersNeeded?: number;
-  requiredSkills: string[];
-  location: string[];
-  tags: string[];
-}
-
-export interface UpdateProjectDTO extends Partial<CreateProjectDTO> {
-  id: number;
-}
-
-export interface ProjectResponse extends CreateProjectDTO {
-  id: number;
-  slug: string;
-  volunteersRegistered: number;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: number;
-}
-
-// ============================================================================
 // VOLUNTEERS
 // ============================================================================
 
@@ -528,4 +603,201 @@ export interface BitacoraEntryResponse extends CreateBitacoraEntryDTO {
   uploadedByName: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// ============================================================================
+// ACTIVITY LOGS
+// ============================================================================
+
+export enum ActivityType {
+  CHILD_UPDATE = 'CHILD_UPDATE',
+  SPONSORSHIP_CREATED = 'SPONSORSHIP_CREATED',
+  SPONSORSHIP_CANCELLED = 'SPONSORSHIP_CANCELLED',
+  SPONSORSHIP_COMPLETED = 'SPONSORSHIP_COMPLETED',
+  MESSAGE_SENT = 'MESSAGE_SENT',
+  BITACORA_ENTRY_ADDED = 'BITACORA_ENTRY_ADDED',
+  CHILD_REGISTERED = 'CHILD_REGISTERED',
+  REQUEST_APPROVED = 'REQUEST_APPROVED',
+  REQUEST_REJECTED = 'REQUEST_REJECTED',
+  GENERAL_UPDATE = 'GENERAL_UPDATE',
+}
+
+// Crear registro de actividad
+export interface CreateActivityLogDTO {
+  type: ActivityType;
+  title: string;
+  description: string;
+  childId?: number;
+  sponsorshipId?: number;
+  metadata?: Record<string, any>;
+  performedBy?: number;
+}
+
+// Respuesta de actividad
+export interface ActivityLogResponse {
+  id: number;
+  type: ActivityType;
+  title: string;
+  description: string;
+  childId?: number;
+  childName?: string;
+  sponsorshipId?: number;
+  metadata?: Record<string, any>;
+  performedBy?: number;
+  performedByName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Obtener actividades de un niño
+export interface GetActivitiesByChildParams {
+  childId: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface ActivitiesResponse {
+  data: ActivityLogResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Obtener actividades de un apadrinamiento
+export interface GetActivitiesBySponsorshipParams {
+  sponsorshipId: number;
+  userId: number;
+  userRole: 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN';
+  page?: number;
+  limit?: number;
+}
+
+// Obtener actividades recientes
+export interface GetRecentActivitiesParams {
+  page?: number;
+  limit?: number;
+  type?: ActivityType;
+}
+
+// ============================================================================
+// PROJECTS (PROYECTOS)
+// ============================================================================
+
+export enum ProjectStatus {
+  PLANNED = 'PLANNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  PAUSED = 'PAUSED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ProjectType {
+  EDUCATION = 'EDUCATION',
+  HEALTH = 'HEALTH',
+  INFRASTRUCTURE = 'INFRASTRUCTURE',
+  NUTRITION = 'NUTRITION',
+  RECREATION = 'RECREATION',
+  OTHER = 'OTHER',
+}
+
+// Crear proyecto
+export interface CreateProjectDTO {
+  name: string;
+  description: string;
+  type: ProjectType;
+  status?: ProjectStatus;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  location?: string;
+  objectives?: string[];
+  childrenIds?: number[];
+  metadata?: Record<string, any>;
+}
+
+// Actualizar proyecto
+export interface UpdateProjectDTO {
+  id: number;
+  name?: string;
+  description?: string;
+  type?: ProjectType;
+  status?: ProjectStatus;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  location?: string;
+  objectives?: string[];
+  metadata?: Record<string, any>;
+}
+
+// Respuesta de proyecto
+export interface ProjectResponse {
+  id: number;
+  name: string;
+  description: string;
+  type: ProjectType;
+  status: ProjectStatus;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  location?: string;
+  objectives?: string[];
+  childrenCount?: number;
+  childrenIds?: number[];
+  children?: Array<{
+    id: number;
+    firstName: string;
+    lastName: string;
+    photo?: string;
+  }>;
+  createdBy?: number;
+  createdByName?: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Listar proyectos
+export interface ListProjectsParams {
+  page?: number;
+  limit?: number;
+  status?: ProjectStatus;
+  type?: ProjectType;
+}
+
+export interface ProjectsListResponse {
+  data: ProjectResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Agregar niño a proyecto
+export interface AddChildToProjectDTO {
+  projectId: number;
+  childId: number;
+  userId: number;
+}
+
+// Remover niño de proyecto
+export interface RemoveChildFromProjectDTO {
+  projectId: number;
+  childId: number;
+  userId: number;
+}
+
+// Actualizar estado del proyecto
+export interface UpdateProjectStatusDTO {
+  projectId: number;
+  status: ProjectStatus;
+  userId: number;
+  reason?: string;
+}
+
+// Eliminar proyecto
+export interface DeleteProjectDTO {
+  projectId: number;
+  userId: number;
 }

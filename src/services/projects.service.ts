@@ -1,7 +1,8 @@
 /**
  * Projects Service
  * 
- * Service layer for project and volunteer management
+ * Service layer for projects management
+ * Handles project CRUD operations and child assignments
  */
 
 import { apiClient } from '@/lib/api-client';
@@ -10,8 +11,14 @@ import {
   CreateProjectDTO,
   UpdateProjectDTO,
   ProjectResponse,
-  RegisterVolunteerDTO,
-  VolunteerResponse,
+  ProjectsListResponse,
+  ListProjectsParams,
+  AddChildToProjectDTO,
+  RemoveChildFromProjectDTO,
+  UpdateProjectStatusDTO,
+  DeleteProjectDTO,
+  ProjectStatus,
+  ProjectType,
   KafkaTopic,
   ApiResponse,
 } from '@/types/api.types';
@@ -19,227 +26,224 @@ import {
 export class ProjectsService extends BaseService {
   /**
    * Crear nuevo proyecto
+   * Topic: apadrinamiento_projects_create
    */
   async createProject(
     dto: CreateProjectDTO,
     userId: number
   ): Promise<ApiResponse<ProjectResponse>> {
-    this.validateProjectDTO(dto);
+    // Validaciones
+    this.validateRequired(dto.name, 'name');
+    this.validateLength(dto.name, 'name', 3, 200);
     
-    return apiClient.sendToKafka<ProjectResponse>(KafkaTopic.PROJECT_CREATE, {
-      dto,
-      userId,
-    });
+    this.validateRequired(dto.description, 'description');
+    this.validateLength(dto.description, 'description', 10, 2000);
+    
+    this.validateRequired(dto.type, 'type');
+    
+    // Validar que type sea válido
+    const validTypes = Object.values(ProjectType);
+    if (!validTypes.includes(dto.type)) {
+      throw new Error(`type debe ser uno de: ${validTypes.join(', ')}`);
+    }
+
+    // Validar fechas si se proporcionan
+    if (dto.startDate && !this.isValidISODate(dto.startDate)) {
+      throw new Error('startDate debe estar en formato ISO 8601');
+    }
+
+    if (dto.endDate && !this.isValidISODate(dto.endDate)) {
+      throw new Error('endDate debe estar en formato ISO 8601');
+    }
+
+    if (dto.startDate && dto.endDate) {
+      if (new Date(dto.startDate) >= new Date(dto.endDate)) {
+        throw new Error('endDate debe ser posterior a startDate');
+      }
+    }
+
+    // Validar budget si se proporciona
+    if (dto.budget !== undefined && dto.budget < 0) {
+      throw new Error('budget debe ser un número positivo');
+    }
+
+    this.validateRequired(userId, 'userId');
+
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_CREATE,
+      { dto, userId }
+    );
   }
 
   /**
    * Actualizar proyecto
+   * Topic: apadrinamiento_projects_update
    */
   async updateProject(
     dto: UpdateProjectDTO,
     userId: number
   ): Promise<ApiResponse<ProjectResponse>> {
     this.validateRequired(dto.id, 'id');
-    
-    return apiClient.sendToKafka<ProjectResponse>(KafkaTopic.PROJECT_UPDATE, {
-      dto,
-      userId,
-    });
-  }
+    this.validateRequired(userId, 'userId');
 
-  /**
-   * Eliminar proyecto
-   */
-  async deleteProject(
-    projectId: number,
-    userId: number
-  ): Promise<ApiResponse<void>> {
-    this.validateRequired(projectId, 'projectId');
-    
-    return apiClient.sendToKafka<void>(KafkaTopic.PROJECT_DELETE, {
-      projectId,
-      userId,
-    });
-  }
+    // Validaciones opcionales
+    if (dto.name) {
+      this.validateLength(dto.name, 'name', 3, 200);
+    }
 
-  /**
-   * Listar proyectos
-   */
-  async listProjects(filters?: any): Promise<ApiResponse<ProjectResponse[]>> {
-    return apiClient.sendToKafka<ProjectResponse[]>(
-      KafkaTopic.PROJECT_LIST,
-      filters || {}
+    if (dto.description) {
+      this.validateLength(dto.description, 'description', 10, 2000);
+    }
+
+    if (dto.type) {
+      const validTypes = Object.values(ProjectType);
+      if (!validTypes.includes(dto.type)) {
+        throw new Error(`type debe ser uno de: ${validTypes.join(', ')}`);
+      }
+    }
+
+    if (dto.status) {
+      const validStatuses = Object.values(ProjectStatus);
+      if (!validStatuses.includes(dto.status)) {
+        throw new Error(`status debe ser uno de: ${validStatuses.join(', ')}`);
+      }
+    }
+
+    if (dto.startDate && !this.isValidISODate(dto.startDate)) {
+      throw new Error('startDate debe estar en formato ISO 8601');
+    }
+
+    if (dto.endDate && !this.isValidISODate(dto.endDate)) {
+      throw new Error('endDate debe estar en formato ISO 8601');
+    }
+
+    if (dto.budget !== undefined && dto.budget < 0) {
+      throw new Error('budget debe ser un número positivo');
+    }
+
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_UPDATE,
+      { dto, userId }
     );
   }
 
   /**
-   * Registrar voluntario
+   * Eliminar proyecto
+   * Topic: apadrinamiento_projects_delete
    */
-  async registerVolunteer(
-    dto: RegisterVolunteerDTO
-  ): Promise<ApiResponse<VolunteerResponse>> {
-    this.validateVolunteerDTO(dto);
-    
-    return apiClient.sendToKafka<VolunteerResponse>(
-      KafkaTopic.VOLUNTEER_REGISTER,
+  async deleteProject(
+    dto: DeleteProjectDTO
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    this.validateRequired(dto.projectId, 'projectId');
+    this.validateRequired(dto.userId, 'userId');
+
+    return apiClient.sendToKafka<{ success: boolean }>(
+      KafkaTopic.PROJECT_DELETE,
       dto
     );
   }
 
   /**
-   * Actualizar voluntario
+   * Listar proyectos
+   * Topic: apadrinamiento_projects_list
    */
-  async updateVolunteer(
-    volunteerId: number,
-    updates: Partial<RegisterVolunteerDTO>
-  ): Promise<ApiResponse<VolunteerResponse>> {
-    this.validateRequired(volunteerId, 'volunteerId');
-    
-    return apiClient.sendToKafka<VolunteerResponse>(KafkaTopic.VOLUNTEER_UPDATE, {
-      volunteerId,
-      updates,
-    });
-  }
+  async listProjects(
+    params?: ListProjectsParams
+  ): Promise<ApiResponse<ProjectsListResponse>> {
+    const { page = 1, limit = 12, status, type } = params || {};
 
-  /**
-   * Listar voluntarios
-   */
-  async listVolunteers(filters?: any): Promise<ApiResponse<VolunteerResponse[]>> {
-    return apiClient.sendToKafka<VolunteerResponse[]>(
-      KafkaTopic.VOLUNTEER_LIST,
-      filters || {}
+    // Validar status si se proporciona
+    if (status) {
+      const validStatuses = Object.values(ProjectStatus);
+      if (!validStatuses.includes(status)) {
+        throw new Error(`status debe ser uno de: ${validStatuses.join(', ')}`);
+      }
+    }
+
+    // Validar type si se proporciona
+    if (type) {
+      const validTypes = Object.values(ProjectType);
+      if (!validTypes.includes(type)) {
+        throw new Error(`type debe ser uno de: ${validTypes.join(', ')}`);
+      }
+    }
+
+    return apiClient.sendToKafka<ProjectsListResponse>(
+      KafkaTopic.PROJECT_LIST,
+      { page, limit, status, type }
     );
   }
 
   /**
-   * Validar DTO de proyecto
+   * Obtener proyecto por ID
+   * Topic: apadrinamiento_projects_get_by_id
    */
-  private validateProjectDTO(dto: CreateProjectDTO): void {
-    this.validateRequired(dto.title, 'title');
-    this.validateLength(dto.title, 'title', 3, 200);
-    
-    this.validateRequired(dto.shortDescription, 'shortDescription');
-    this.validateLength(dto.shortDescription, 'shortDescription', 10, 500);
-    
-    this.validateRequired(dto.fullDescription, 'fullDescription');
-    this.validateRequired(dto.mainGoal, 'mainGoal');
-    this.validateRequired(dto.startDate, 'startDate');
-    this.validateRequired(dto.endDate, 'endDate');
-    
-    if (!this.isValidISODate(dto.startDate)) {
-      throw new Error('startDate debe estar en formato ISO 8601');
-    }
-    
-    if (!this.isValidISODate(dto.endDate)) {
-      throw new Error('endDate debe estar en formato ISO 8601');
-    }
-    
-    if (new Date(dto.startDate) >= new Date(dto.endDate)) {
-      throw new Error('endDate debe ser posterior a startDate');
-    }
-    
-    if (dto.mainImage && !this.isValidUrl(dto.mainImage)) {
-      throw new Error('mainImage debe ser una URL válida');
-    }
+  async getProjectById(
+    projectId: number
+  ): Promise<ApiResponse<ProjectResponse>> {
+    this.validateRequired(projectId, 'projectId');
+
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_GET_BY_ID,
+      { projectId }
+    );
   }
 
   /**
-   * Validar DTO de voluntario
+   * Agregar niño a proyecto
+   * Topic: apadrinamiento_projects_add_child
    */
-  private validateVolunteerDTO(dto: RegisterVolunteerDTO): void {
+  async addChildToProject(
+    dto: AddChildToProjectDTO
+  ): Promise<ApiResponse<ProjectResponse>> {
     this.validateRequired(dto.projectId, 'projectId');
-    this.validateRequired(dto.fullName, 'fullName');
-    this.validateLength(dto.fullName, 'fullName', 3, 100);
-    
-    this.validateRequired(dto.email, 'email');
-    if (!this.isValidEmail(dto.email)) {
-      throw new Error('email debe ser válido');
-    }
-    
-    this.validateRequired(dto.phone, 'phone');
-    this.validateRequired(dto.motivation, 'motivation');
-    this.validateLength(dto.motivation, 'motivation', 10, 1000);
-    
-    if (!dto.acceptedTerms) {
-      throw new Error('Debe aceptar los términos y condiciones');
-    }
+    this.validateRequired(dto.childId, 'childId');
+    this.validateRequired(dto.userId, 'userId');
+
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_ADD_CHILD,
+      dto
+    );
   }
 
   /**
-   * Convertir proyecto local a API format
+   * Remover niño de proyecto
+   * Topic: apadrinamiento_projects_remove_child
    */
-  convertProjectToApiFormat(localProject: any): CreateProjectDTO {
-    return {
-      title: localProject.title,
-      shortDescription: localProject.shortDescription,
-      fullDescription: localProject.fullDescription,
-      mainGoal: localProject.mainGoal,
-      specificObjectives: localProject.specificObjectives || [],
-      beneficiaries: localProject.beneficiaries,
-      startDate: localProject.startDate,
-      endDate: localProject.endDate,
-      status: this.mapProjectStatus(localProject.status),
-      mainImage: localProject.mainImage,
-      gallery: localProject.gallery,
-      needsVolunteers: localProject.needsVolunteers,
-      volunteersNeeded: localProject.volunteersNeeded,
-      requiredSkills: localProject.requiredSkills || [],
-      location: localProject.location || [],
-      tags: localProject.tags || [],
-    };
+  async removeChildFromProject(
+    dto: RemoveChildFromProjectDTO
+  ): Promise<ApiResponse<ProjectResponse>> {
+    this.validateRequired(dto.projectId, 'projectId');
+    this.validateRequired(dto.childId, 'childId');
+    this.validateRequired(dto.userId, 'userId');
+
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_REMOVE_CHILD,
+      dto
+    );
   }
 
   /**
-   * Convertir proyecto API a local format
+   * Actualizar estado del proyecto
+   * Topic: apadrinamiento_projects_update_status
    */
-  convertProjectFromApiFormat(apiProject: ProjectResponse): any {
-    return {
-      id: String(apiProject.id),
-      title: apiProject.title,
-      slug: apiProject.slug,
-      shortDescription: apiProject.shortDescription,
-      fullDescription: apiProject.fullDescription,
-      mainGoal: apiProject.mainGoal,
-      specificObjectives: apiProject.specificObjectives,
-      beneficiaries: apiProject.beneficiaries,
-      startDate: apiProject.startDate,
-      endDate: apiProject.endDate,
-      status: this.mapProjectStatusFromApi(apiProject.status),
-      isPublished: apiProject.status === 'active',
-      mainImage: apiProject.mainImage,
-      gallery: apiProject.gallery || [],
-      needsVolunteers: apiProject.needsVolunteers,
-      volunteersNeeded: apiProject.volunteersNeeded,
-      volunteersRegistered: apiProject.volunteersRegistered,
-      requiredSkills: apiProject.requiredSkills,
-      location: apiProject.location,
-      tags: apiProject.tags,
-      createdAt: apiProject.createdAt,
-      updatedAt: apiProject.updatedAt,
-      createdBy: String(apiProject.createdBy),
-    };
-  }
+  async updateProjectStatus(
+    dto: UpdateProjectStatusDTO
+  ): Promise<ApiResponse<ProjectResponse>> {
+    this.validateRequired(dto.projectId, 'projectId');
+    this.validateRequired(dto.status, 'status');
+    this.validateRequired(dto.userId, 'userId');
 
-  private mapProjectStatus(status: string): 'draft' | 'active' | 'completed' | 'archived' {
-    const mapping: Record<string, any> = {
-      'borrador': 'draft',
-      'activo': 'active',
-      'finalizado': 'completed',
-      'archivado': 'archived',
-    };
-    return mapping[status] || 'draft';
-  }
+    const validStatuses = Object.values(ProjectStatus);
+    if (!validStatuses.includes(dto.status)) {
+      throw new Error(`status debe ser uno de: ${validStatuses.join(', ')}`);
+    }
 
-  private mapProjectStatusFromApi(status: string): string {
-    const mapping: Record<string, string> = {
-      'draft': 'borrador',
-      'active': 'activo',
-      'completed': 'finalizado',
-      'archived': 'archivado',
-    };
-    return mapping[status] || 'borrador';
+    return apiClient.sendToKafka<ProjectResponse>(
+      KafkaTopic.PROJECT_UPDATE_STATUS,
+      dto
+    );
   }
 }
 
 export const projectsService = new ProjectsService();
-export default ProjectsService;
