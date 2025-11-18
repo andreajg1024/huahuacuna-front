@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authService } from '@/services/auth.service';
+import { UserResponse, RegisterPadrinoDTO } from '@/types/api.types';
 
 export type UserRole = 'super_admin' | 'admin' | 'padrino';
 export type UserStatus = 'pending' | 'active' | 'blocked' | 'inactive';
@@ -41,55 +43,51 @@ interface RegistrationData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users database
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: '1',
-    nombre: 'Admin Principal',
-    email: 'admin@huahuacuna.org',
-    password: 'Admin123',
-    telefono: '+57 321 456 7890',
-    documento: '1234567890',
-    direccion: 'Armenia, Quindío',
-    role: 'super_admin',
-    status: 'active',
-    fechaRegistro: '2023-01-15',
-    foto: undefined,
-  },
-  {
-    id: '2',
-    nombre: 'María González',
-    email: 'maria@huahuacuna.org',
-    password: 'Admin123',
-    telefono: '+57 321 456 7891',
-    documento: '1234567891',
-    direccion: 'Armenia, Quindío',
-    role: 'admin',
-    status: 'active',
-    fechaRegistro: '2023-02-20',
-    foto: undefined,
-    permissions: ['usuarios', 'ninos', 'apadrinamientos', 'eventos'],
-  },
-  {
-    id: '3',
-    nombre: 'Carlos Ramírez',
-    email: 'carlos@example.com',
-    password: 'Padrino123',
-    telefono: '+57 321 456 7892',
-    documento: '1234567892',
-    direccion: 'Bogotá, Colombia',
-    role: 'padrino',
-    status: 'active',
-    fechaRegistro: '2023-06-10',
-    foto: undefined,
-  },
-];
+/**
+ * Convertir UserResponse de la API al formato User del contexto
+ */
+function mapApiUserToContextUser(apiUser: UserResponse): User {
+  return {
+    id: String(apiUser.id),
+    nombre: apiUser.name,
+    email: apiUser.email,
+    telefono: apiUser.phone || '',
+    documento: apiUser.documentId || '',
+    direccion: apiUser.address || '',
+    role: mapApiRoleToContextRole(apiUser.role),
+    status: mapApiStatusToContextStatus(apiUser.status),
+    foto: apiUser.avatar,
+    fechaRegistro: new Date(apiUser.createdAt).toISOString().split('T')[0],
+    permissions: undefined, // TODO: Si el backend envía permisos, mapearlos aquí
+  };
+}
 
-// AuthProvider encapsula toda la lógica de autenticación en memoria:
-// - Usa un pequeño "mock" de usuarios con roles (super_admin, admin, padrino).
-// - Simula login, registro y actualización de perfil con localStorage.
-// - Implementa bloqueo temporal por demasiados intentos fallidos.
-// Esta capa está lista para reemplazarse por llamadas reales a un backend en el futuro.
+function mapApiRoleToContextRole(apiRole: 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN'): UserRole {
+  const roleMap: Record<string, UserRole> = {
+    'PADRINO': 'padrino',
+    'ADMIN': 'admin',
+    'SUPER_ADMIN': 'super_admin',
+  };
+  return roleMap[apiRole] || 'padrino';
+}
+
+function mapApiStatusToContextStatus(apiStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING'): UserStatus {
+  const statusMap: Record<string, UserStatus> = {
+    'ACTIVE': 'active',
+    'INACTIVE': 'inactive',
+    'SUSPENDED': 'blocked',
+    'PENDING': 'pending',
+  };
+  return statusMap[apiStatus] || 'pending';
+}
+
+/**
+ * AuthProvider con integración real al backend mediante authService
+ * - Login con endpoint REST /auth/login
+ * - Registro con endpoint REST /auth/register
+ * - Actualización de perfil con endpoint REST /auth/profile
+ * - Bloqueo temporal por intentos fallidos (manejado en el frontend)
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -149,84 +147,124 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Cuenta bloqueada temporalmente. Intenta más tarde.');
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Llamar al servicio real de autenticación
+      const response = await authService.login({ email, password });
 
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
+      if (!response.success || !response.data) {
+        // Incrementar intentos fallidos
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
 
-    if (!foundUser) {
-      const newAttempts = failedAttempts + 1;
-      setFailedAttempts(newAttempts);
+        if (newAttempts >= 5) {
+          const blockTime = Date.now() + 15 * 60 * 1000; // 15 minutes
+          setBlockUntil(blockTime);
+          localStorage.setItem('block_until', blockTime.toString());
+          throw new Error('Cuenta bloqueada temporalmente por 15 minutos');
+        }
 
-      if (newAttempts >= 5) {
-        const blockTime = Date.now() + 15 * 60 * 1000; // 15 minutes
-        setBlockUntil(blockTime);
-        localStorage.setItem('block_until', blockTime.toString());
-        throw new Error('Cuenta bloqueada temporalmente por 15 minutos');
+        throw new Error(response.error?.message || `Credenciales incorrectas. Te quedan ${5 - newAttempts} intentos.`);
       }
 
-      throw new Error(`Email o contraseña incorrectos. Te quedan ${5 - newAttempts} intentos.`);
+      // Login exitoso
+      setFailedAttempts(0);
+      localStorage.removeItem('block_until');
+
+      // Convertir usuario de la API al formato del contexto
+      const contextUser = mapApiUserToContextUser(response.data.user);
+
+      setUser(contextUser);
+      setToken(response.data.accessToken);
+      
+      // authService ya guarda los tokens en localStorage, 
+      // pero guardamos también el usuario en formato del contexto
+      localStorage.setItem('auth_user', JSON.stringify(contextUser));
+
+    } catch (error) {
+      // Manejar errores de red o del servicio
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al iniciar sesión. Intenta nuevamente.');
     }
-
-    if (foundUser.status === 'pending') {
-      throw new Error('Cuenta pendiente de activación. Revisa tu email.');
-    }
-
-    if (foundUser.status === 'inactive' || foundUser.status === 'blocked') {
-      throw new Error('Cuenta inactiva. Contacta al administrador.');
-    }
-
-    // Successful login
-    setFailedAttempts(0);
-    localStorage.removeItem('block_until');
-
-    const { password: _, ...userWithoutPassword } = foundUser;
-    const mockToken = `mock_jwt_token_${Date.now()}`;
-
-    setUser(userWithoutPassword);
-    setToken(mockToken);
-    localStorage.setItem('auth_token', mockToken);
-    localStorage.setItem('auth_user', JSON.stringify(userWithoutPassword));
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+  const logout = async () => {
+    try {
+      // Intentar logout en el backend
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken && token) {
+        await authService.logout({ refreshToken });
+      }
+    } catch (error) {
+      console.error('Error al cerrar sesión en el backend:', error);
+      // Continuar con el logout local incluso si falla el backend
+    } finally {
+      // Limpiar estado local
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('auth_user');
+    }
   };
 
   const register = async (data: RegistrationData) => {
-    // Check if email already exists
-    const exists = mockUsers.find(u => u.email === data.email);
-    if (exists) {
-      throw new Error('Este email ya está registrado');
+    try {
+      // Mapear datos del formulario al formato de la API
+      const registerDTO: RegisterPadrinoDTO = {
+        name: data.nombre,
+        email: data.email,
+        password: data.password,
+        phone: data.telefono,
+        documentId: data.documento,
+        address: data.direccion,
+      };
+
+      const response = await authService.register(registerDTO);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al registrar usuario');
+      }
+
+      // Registro exitoso - el usuario quedará en estado 'pending' hasta verificar email
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al registrar usuario. Intenta nuevamente.');
     }
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // In real implementation, this would create a user with 'pending' status
-    const newUser: User & { password: string } = {
-      id: `${mockUsers.length + 1}`,
-      ...data,
-      role: 'padrino',
-      status: 'pending',
-      fechaRegistro: new Date().toISOString().split('T')[0],
-    };
-
-    mockUsers.push(newUser);
   };
 
   const updateProfile = async (data: Partial<User>) => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Mapear solo los campos que la API permite actualizar
+      const updateDTO: any = {};
+      if (data.telefono !== undefined) updateDTO.phone = data.telefono;
+      if (data.direccion !== undefined) updateDTO.address = data.direccion;
+      if (data.foto !== undefined) updateDTO.avatar = data.foto;
 
-    const updatedUser = { ...user, ...data };
-    setUser(updatedUser);
-    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      const response = await authService.updateProfile(updateDTO);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al actualizar perfil');
+      }
+
+      // Actualizar usuario en el contexto
+      const updatedContextUser = mapApiUserToContextUser(response.data);
+      setUser(updatedContextUser);
+      localStorage.setItem('auth_user', JSON.stringify(updatedContextUser));
+
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al actualizar perfil. Intenta nuevamente.');
+    }
   };
 
   const value = {
