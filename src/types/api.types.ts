@@ -224,6 +224,7 @@ export interface CreateChildDTO {
   address?: string;
   photo?: string;
   photos?: string[];
+  needs?: string[];
   institution?: string;
   grade?: string;
   schedule?: string;
@@ -421,6 +422,65 @@ export interface MessageResponse {
   timestamp: string;
   read: boolean;
   delivered: boolean;
+}
+
+// ============================================================================
+// CHAT & CONVERSATIONS
+// ============================================================================
+
+export interface CreateConversationDTO {
+  sponsorshipId: number;
+}
+
+export interface ConversationResponse {
+  id: number;
+  sponsorshipId: number;
+  sponsorshipDetails?: {
+    childName: string;
+    sponsorName: string;
+    childPhoto?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  lastMessage?: {
+    id: number;
+    content: string;
+    senderId: number;
+    senderName: string;
+    timestamp: string;
+  };
+}
+
+export interface GetConversationsParams {
+  page?: number;
+  limit?: number;
+}
+
+export interface SendChatMessageDTO {
+  conversationId: number;
+  content: string;
+}
+
+export interface ChatMessageResponse {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  senderName: string;
+  senderRole: 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN';
+  content: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetMessagesParams {
+  conversationId: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface MarkMessagesAsReadDTO {
+  conversationId: number;
 }
 
 // ============================================================================

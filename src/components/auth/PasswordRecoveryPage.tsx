@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Mail, Loader2, CheckCircle, ArrowLeft, Eye, EyeOff, XCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
+import { authService } from '@/services/auth.service';
 
 interface PasswordRecoveryPageProps {
   onNavigate: (page: string) => void;
+  token?: string;
 }
 
-export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) {
-  const [step, setStep] = useState<'request' | 'reset' | 'success'>('request');
+export function PasswordRecoveryPage({ onNavigate, token: propToken }: PasswordRecoveryPageProps) {
+  const [step, setStep] = useState<'request' | 'sent' | 'reset' | 'success'>('request');
   const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,17 +24,33 @@ export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) 
   const [error, setError] = useState('');
   const [tokenExpired, setTokenExpired] = useState(false);
 
+  // Check for reset token in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const resetToken = propToken || urlParams.get('token');
+    
+    if (resetToken) {
+      setToken(resetToken);
+      setStep('reset');
+    }
+  }, [propToken]);
+
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    setIsLoading(false);
-    setStep('reset');
-    // In real app, this would send an email and show a message
+    try {
+      const response = await authService.requestPasswordReset({ email });
+      
+      if (response.success) {
+        setStep('sent');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al solicitar recuperación');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getPasswordStrength = (password: string): { strength: number; label: string } => {
@@ -71,26 +90,39 @@ export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) 
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Simulate token expiration (20% chance)
-    if (Math.random() < 0.2) {
+    if (!token) {
+      setError('Token de verificación no encontrado');
       setTokenExpired(true);
-      setError('El enlace ha expirado. Solicita uno nuevo.');
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(false);
-    setStep('success');
+    setIsLoading(true);
 
-    // Auto redirect to login after 3 seconds
-    setTimeout(() => {
-      onNavigate('login');
-    }, 3000);
+    try {
+      const response = await authService.resetPassword({
+        token,
+        newPassword,
+      });
+
+      if (response.success) {
+        setIsLoading(false);
+        setStep('success');
+
+        // Auto redirect to login after 3 seconds
+        setTimeout(() => {
+          onNavigate('login');
+        }, 3000);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      const errorMessage = err instanceof Error ? err.message : 'Error al restablecer contraseña';
+      setError(errorMessage);
+      
+      // Si el error es por token expirado, marcarlo
+      if (errorMessage.includes('expirado') || errorMessage.includes('inválido')) {
+        setTokenExpired(true);
+      }
+    }
   };
 
   const passwordStrength = getPasswordStrength(newPassword);
@@ -177,7 +209,59 @@ export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) 
     );
   }
 
-  // Step 2: Reset Password
+  // Step 2: Email Sent Confirmation
+  if (step === 'sent') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-amber-50 to-emerald-50">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-12 text-center">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-12 h-12 text-blue-600" />
+            </div>
+            <h2 className="text-gray-900 mb-4">Revisa tu Correo</h2>
+            <p className="text-gray-600 mb-8">
+              Si el correo <strong>{email}</strong> existe en nuestro sistema, 
+              recibirás un enlace de recuperación en los próximos minutos.
+            </p>
+            
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-left">
+                <p className="text-sm text-blue-900 mb-2" style={{ fontWeight: 600 }}>
+                  📧 Instrucciones:
+                </p>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Revisa tu bandeja de entrada</li>
+                  <li>También revisa la carpeta de spam</li>
+                  <li>El enlace es válido por 1 hora</li>
+                  <li>Haz clic en el enlace para restablecer tu contraseña</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-3">
+              <Button
+                onClick={() => setStep('request')}
+                variant="outline"
+                className="w-full"
+              >
+                Intentar con Otro Email
+              </Button>
+              <button
+                type="button"
+                onClick={() => onNavigate('login')}
+                className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Volver a Iniciar Sesión
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Step 3: Reset Password
   if (step === 'reset') {
     return (
       <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-amber-50 to-emerald-50">
@@ -338,7 +422,7 @@ export function PasswordRecoveryPage({ onNavigate }: PasswordRecoveryPageProps) 
     );
   }
 
-  // Step 3: Success
+  // Step 4: Success
   return (
     <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-amber-50 to-emerald-50">
       <Card className="max-w-md w-full">

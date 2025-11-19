@@ -23,6 +23,7 @@ import { ContactSection } from './components/ContactSection';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
 import { PasswordRecoveryPage } from './components/auth/PasswordRecoveryPage';
+import { VerifyEmailPage } from './components/auth/VerifyEmailPage';
 
 // Dashboard Pages
 import { DashboardLayout } from './components/layouts/DashboardLayout';
@@ -84,12 +85,25 @@ function AppContent() {
 
   // Auto-navigate to dashboard when user logs in
   useEffect(() => {
+    console.log('🔄 Efecto de navegación ejecutándose...');
+    console.log('  - isAuthenticated:', isAuthenticated);
+    console.log('  - user:', user);
+    console.log('  - currentPage:', currentPage);
+
     if (isAuthenticated && user) {
+      console.log('✅ Condiciones cumplidas, navegando a dashboard...');
       setCurrentPage('dashboard');
+    } else {
+      console.log('❌ Condiciones NO cumplidas para navegar');
     }
   }, [isAuthenticated, user]);
 
+  useEffect(() => {
+    console.log('📄 currentPage cambió a:', currentPage);
+  }, [currentPage]);
+
   const handleNavigate = (page: string) => {
+    console.log('🔀 Navegando manualmente a:', page);
     setCurrentPage(page);
   };
 
@@ -104,6 +118,10 @@ function AppContent() {
 
   if (currentPage === 'password-recovery') {
     return <PasswordRecoveryPage onNavigate={handleNavigate} />;
+  }
+
+  if (currentPage === 'verify-email') {
+    return <VerifyEmailPage onNavigate={handleNavigate} />;
   }
 
   // Dashboard Pages (require authentication)
@@ -316,4 +334,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-

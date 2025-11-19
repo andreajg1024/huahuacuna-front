@@ -72,132 +72,6 @@ export interface ChildFilters {
 
 const SponsorshipContext = createContext<SponsorshipContextType | undefined>(undefined);
 
-// Mock children data
-const mockChildren: Child[] = [
-  {
-    id: '1',
-    nombre: 'María C.',
-    nombreCompleto: 'María Camila Rodríguez',
-    edad: 12,
-    fechaNacimiento: '2012-03-15',
-    genero: 'femenino',
-    municipio: 'Armenia',
-    institucion: 'Institución Educativa San José',
-    grado: '7° grado',
-    foto: 'https://images.unsplash.com/photo-1565373086464-c8af0d586c0c?w=400',
-    fotos: [
-      'https://images.unsplash.com/photo-1565373086464-c8af0d586c0c?w=600',
-      'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600',
-      'https://images.unsplash.com/photo-1544717302-de2939b7ef71?w=600',
-    ],
-    descripcionBreve: 'Niña alegre que ama las matemáticas y sueña con ser ingeniera. Le encanta ayudar a sus compañeros.',
-    historia: 'María vive con su abuela y dos hermanos menores en Armenia. A pesar de las dificultades económicas, siempre mantiene una actitud positiva y es la mejor estudiante de su clase. Le apasionan las matemáticas y la ciencia, y dedica sus tardes a ayudar a otros niños del barrio con sus tareas. Su mayor sueño es convertirse en ingeniera para construir casas para familias necesitadas.',
-    necesidades: ['Útiles escolares', 'Uniforme', 'Atención médica', 'Alimentación'],
-    suenos: 'Quiero ser ingeniera civil y construir casas bonitas para familias que lo necesiten',
-    frase: '"Me gusta ayudar a mis compañeros cuando no entienden las matemáticas"',
-    disponible: true,
-    fechaRegistro: '2024-01-10',
-  },
-  {
-    id: '2',
-    nombre: 'Carlos A.',
-    nombreCompleto: 'Carlos Andrés Gómez',
-    edad: 9,
-    fechaNacimiento: '2015-07-22',
-    genero: 'masculino',
-    municipio: 'Calarcá',
-    institucion: 'Colegio Departamental',
-    grado: '4° grado',
-    foto: 'https://images.unsplash.com/photo-1508363778367-af363f107cbb?w=400',
-    fotos: [
-      'https://images.unsplash.com/photo-1508363778367-af363f107cbb?w=600',
-      'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=600',
-    ],
-    descripcionBreve: 'Niño creativo que ama el arte y el fútbol. Siempre tiene una sonrisa para compartir.',
-    historia: 'Carlos vive con su madre soltera y una hermana mayor en Calarcá. Es un niño muy creativo que disfruta dibujando y jugando fútbol. A pesar de las limitaciones económicas, Carlos siempre encuentra maneras de ser feliz y hacer sonreír a los demás.',
-    necesidades: ['Material escolar', 'Ropa deportiva', 'Materiales de arte'],
-    suenos: 'Quiero ser futbolista profesional o artista',
-    frase: '"El fútbol y el arte me hacen muy feliz"',
-    disponible: true,
-    fechaRegistro: '2024-01-15',
-  },
-  {
-    id: '3',
-    nombre: 'Ana S.',
-    nombreCompleto: 'Ana Sofía Martínez',
-    edad: 14,
-    fechaNacimiento: '2010-11-08',
-    genero: 'femenino',
-    municipio: 'Montenegro',
-    institucion: 'Institución Educativa Técnica',
-    grado: '9° grado',
-    foto: 'https://images.unsplash.com/photo-1542103749-8ef59b94f47e?w=400',
-    fotos: [
-      'https://images.unsplash.com/photo-1542103749-8ef59b94f47e?w=600',
-    ],
-    descripcionBreve: 'Estudiante dedicada que ama la lectura y la música. Toca guitarra en su tiempo libre.',
-    historia: 'Ana vive con sus padres y tres hermanos en Montenegro. Es una estudiante ejemplar que combina su amor por la lectura con su talento musical. Ha aprendido a tocar la guitarra de manera autodidacta y participa en el coro de su escuela.',
-    necesidades: ['Libros', 'Instrumento musical', 'Uniforme escolar'],
-    suenos: 'Quiero estudiar literatura y ser profesora de música',
-    disponible: true,
-    fechaRegistro: '2024-01-20',
-  },
-  {
-    id: '4',
-    nombre: 'Juan D.',
-    nombreCompleto: 'Juan David López',
-    edad: 11,
-    fechaNacimiento: '2013-05-30',
-    genero: 'masculino',
-    municipio: 'Armenia',
-    institucion: 'Colegio La Esperanza',
-    grado: '6° grado',
-    foto: 'https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=400',
-    descripcionBreve: 'Niño curioso que ama la naturaleza y los animales. Quiere ser veterinario.',
-    historia: 'Juan vive con su familia en las afueras de Armenia. Desde pequeño ha mostrado un amor especial por los animales y la naturaleza. Dedica su tiempo libre a cuidar de los animales callejeros del barrio.',
-    necesidades: ['Útiles escolares', 'Zapatos', 'Libros sobre animales'],
-    suenos: 'Quiero ser veterinario y ayudar a todos los animales',
-    disponible: true,
-    fechaRegistro: '2024-01-25',
-  },
-  {
-    id: '5',
-    nombre: 'Laura M.',
-    nombreCompleto: 'Laura Melissa Vargas',
-    edad: 8,
-    fechaNacimiento: '2016-02-14',
-    genero: 'femenino',
-    municipio: 'Circasia',
-    institucion: 'Escuela Rural San Pedro',
-    grado: '3° grado',
-    foto: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400',
-    descripcionBreve: 'Niña tímida pero muy inteligente. Le encanta la naturaleza y cuidar el medio ambiente.',
-    historia: 'Laura vive en una zona rural de Circasia con su familia. Es una niña observadora y curiosa que disfruta aprendiendo sobre las plantas y el cuidado del medio ambiente.',
-    necesidades: ['Transporte escolar', 'Material educativo', 'Ropa adecuada'],
-    suenos: 'Quiero cuidar el planeta y enseñar a otros niños sobre la naturaleza',
-    disponible: true,
-    fechaRegistro: '2024-02-01',
-  },
-  {
-    id: '6',
-    nombre: 'Santiago R.',
-    nombreCompleto: 'Santiago Ramírez',
-    edad: 13,
-    fechaNacimiento: '2011-09-12',
-    genero: 'masculino',
-    municipio: 'Salento',
-    institucion: 'Colegio Salento',
-    grado: '8° grado',
-    foto: 'https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400',
-    descripcionBreve: 'Joven apasionado por la tecnología y la programación. Autodidacta y creativo.',
-    historia: 'Santiago vive en Salento y ha desarrollado un gran interés por la tecnología. A pesar de no tener computadora en casa, utiliza los recursos de la biblioteca para aprender programación.',
-    necesidades: ['Computadora', 'Acceso a internet', 'Cursos de tecnología'],
-    suenos: 'Quiero ser programador y crear aplicaciones que ayuden a mi comunidad',
-    disponible: true,
-    fechaRegistro: '2024-02-05',
-  },
-];
-
 // SponsorshipProvider maneja el estado de apadrinamientos en memoria:
 // - mockChildren: catálogo de niños que se muestran en el frontend.
 // - sponsorships: relaciones padrino-niño (simuladas, sin backend real).
@@ -205,77 +79,81 @@ const mockChildren: Child[] = [
 // También expone helpers para filtrar niños, obtener el niño apadrinado actual y contar mensajes no leídos.
 export function SponsorshipProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [allChildren, setAllChildren] = useState<Child[]>(mockChildren);
+  const [allChildren, setAllChildren] = useState<Child[]>([]);
   const [sponsorships, setSponsorships] = useState<Sponsorship[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Cargar niños desde la API al montar
+  // Cargar apadrinamientos si el usuario está autenticado como padrino
   useEffect(() => {
-    const loadChildren = async () => {
+    const loadMySponsorships = async () => {
+      if (!user || user.role !== 'padrino') return;
+
       try {
         setIsLoading(true);
-        const response = await apadrinamientoService.listChildren();
-        
-        if (response.success && response.data) {
-          const children = response.data.map(apiChild => 
-            apadrinamientoService.convertFromApiFormat(apiChild)
-          );
-          setAllChildren(children);
-        } else {
-          console.log('Using mock children data');
-        }
-      } catch (error) {
-        console.error('Error loading children:', error);
-        // Mantener mock data si falla
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        console.log('📋 Cargando apadrinamientos del padrino...');
 
-    loadChildren();
-  }, []);
-
-  // Cargar apadrinamientos si el usuario está autenticado
-  useEffect(() => {
-    const loadSponsorships = async () => {
-      if (!user) return;
-      
-      try {
-        const response = await apadrinamientoService.listSponsorships({
-          sponsorId: user.id,
+        const response = await apadrinamientoService.getMySponsorships({
+          padrinoId: parseInt(user.id, 10),
+          page: 1,
+          limit: 10,
+          activeOnly: true
         });
         
-        if (response.success && response.data) {
-          const mappedSponsorships = response.data.map(s => ({
+        if (response.success && response.data && response.data.sponsorships) {
+          console.log('✅ Apadrinamientos cargados:', response.data.sponsorships.length);
+
+          const mappedSponsorships = response.data.sponsorships.map(s => ({
             id: String(s.id),
             childId: String(s.childId),
             sponsorId: String(s.sponsorId),
             fechaInicio: s.startDate,
             fechaFin: s.endDate,
-            estado: s.status === 'active' ? 'activo' as const :
-                    s.status === 'completed' ? 'completado' as const :
-                    s.status === 'cancelled' ? 'cancelado' as const : 
+            estado: s.status === 'ACTIVE' ? 'activo' as const :
+                    s.status === 'COMPLETED' ? 'completado' as const :
+                    s.status === 'CANCELLED' ? 'cancelado' as const :
                     'en_pausa' as const,
-            razonFin: s.reason,
+            razonFin: s.cancellationReason,
           }));
+
           setSponsorships(mappedSponsorships);
+
+          // Si hay apadrinamientos, cargar la info del niño
+          if (response.data.sponsorships.length > 0) {
+            const firstSponsorship = response.data.sponsorships[0];
+            if (firstSponsorship.child) {
+              const childData = apadrinamientoService.convertFromApiFormat(firstSponsorship.child);
+              setAllChildren([childData]);
+            }
+          }
+        } else {
+          console.log('ℹ️ No hay apadrinamientos activos');
+          setSponsorships([]);
+          setAllChildren([]);
         }
       } catch (error) {
-        console.error('Error loading sponsorships:', error);
+        console.error('❌ Error cargando apadrinamientos:', error);
+        setSponsorships([]);
+        setAllChildren([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    loadSponsorships();
+    loadMySponsorships();
   }, [user]);
 
-  // Get sponsored child for current user (useMemo para evitar problemas de referencia)
+  // Get sponsored child for current user
   const mySponsorship: Sponsorship | null = useMemo(() => {
-    return user?.role === 'padrino' 
-      ? sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo') || null
-      : null;
+    if (user?.role !== 'padrino') return null;
+    return sponsorships.find(s => s.sponsorId === user.id && s.estado === 'activo') || null;
   }, [user, sponsorships]);
+
+  const mySponsoredChild: Child | null = useMemo(() => {
+    if (!mySponsorship) return null;
+    return allChildren.find(c => c.id === mySponsorship.childId) || null;
+  }, [mySponsorship, allChildren]);
 
   // Cargar mensajes si hay un apadrinamiento activo
   useEffect(() => {
@@ -283,6 +161,7 @@ export function SponsorshipProvider({ children }: { children: ReactNode }) {
       if (!user || !mySponsorship) return;
       
       try {
+        console.log('💬 Cargando mensajes...');
         const response = await apadrinamientoService.listMessages(
           parseInt(mySponsorship.id, 10)
         );
@@ -292,26 +171,22 @@ export function SponsorshipProvider({ children }: { children: ReactNode }) {
             id: String(m.id),
             sponsorshipId: String(m.sponsorshipId),
             senderId: String(m.senderId),
-            senderName: m.senderName,
+            senderName: m.senderName || 'Usuario',
             senderRole: m.senderRole === 'sponsor' ? 'padrino' as const : 'admin' as const,
             message: m.message,
             timestamp: m.timestamp,
             read: m.read,
-            delivered: m.delivered,
+            delivered: m.delivered || false,
           }));
           setChatMessages(mappedMessages);
         }
       } catch (error) {
-        console.error('Error loading messages:', error);
+        console.error('❌ Error cargando mensajes:', error);
       }
     };
 
     loadMessages();
-  }, [user, mySponsorship?.id]);
-
-  const mySponsoredChild = mySponsorship 
-    ? allChildren.find(c => c.id === mySponsorship.childId) || null
-    : null;
+  }, [user, mySponsorship]);
 
   // Count unread messages for current user
   const unreadMessagesCount = chatMessages.filter(
@@ -586,4 +461,3 @@ export function useSponsorship() {
   }
   return context;
 }
-

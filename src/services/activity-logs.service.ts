@@ -53,10 +53,61 @@ export class ActivityLogsService extends BaseService {
       this.validateRequired(dto.performedBy, 'performedBy');
     }
 
-    return apiClient.sendToKafka<ActivityLogResponse>(
-      KafkaTopic.ACTIVITY_LOG_CREATE,
-      dto
-    );
+    try {
+      const response = await apiClient.post<ActivityLogResponse>(
+        '/api/activity-logs',
+        dto
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al crear registro de actividad';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'Datos inválidos',
+              code: 'INVALID_DATA',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al crear registro de actividad',
+          code: 'CREATE_ACTIVITY_LOG_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -69,10 +120,66 @@ export class ActivityLogsService extends BaseService {
 
     const { childId, page = 1, limit = 12 } = params;
 
-    return apiClient.sendToKafka<ActivitiesResponse>(
-      KafkaTopic.ACTIVITY_LOG_GET_BY_CHILD,
-      { childId, page, limit }
-    );
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<ActivitiesResponse>(
+        `/api/activity-logs/child/${childId}?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener actividades del niño';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Niño no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener actividades del niño',
+          code: 'GET_ACTIVITIES_BY_CHILD_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -82,20 +189,69 @@ export class ActivityLogsService extends BaseService {
     params: GetActivitiesBySponsorshipParams
   ): Promise<ApiResponse<ActivitiesResponse>> {
     this.validateRequired(params.sponsorshipId, 'sponsorshipId');
-    this.validateRequired(params.userId, 'userId');
-    this.validateRequired(params.userRole, 'userRole');
 
-    const validRoles = ['PADRINO', 'ADMIN', 'SUPER_ADMIN'];
-    if (!validRoles.includes(params.userRole)) {
-      throw new Error('userRole debe ser PADRINO, ADMIN o SUPER_ADMIN');
+    const { sponsorshipId, page = 1, limit = 12 } = params;
+
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<ActivitiesResponse>(
+        `/api/activity-logs/sponsorship/${sponsorshipId}?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener actividades del apadrinamiento';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Apadrinamiento no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener actividades del apadrinamiento',
+          code: 'GET_ACTIVITIES_BY_SPONSORSHIP_ERROR',
+          details: error
+        }
+      };
     }
-
-    const { sponsorshipId, userId, userRole, page = 1, limit = 12 } = params;
-
-    return apiClient.sendToKafka<ActivitiesResponse>(
-      KafkaTopic.ACTIVITY_LOG_GET_BY_SPONSORSHIP,
-      { sponsorshipId, userId, userRole, page, limit }
-    );
   }
 
   /**
@@ -114,10 +270,59 @@ export class ActivityLogsService extends BaseService {
       }
     }
 
-    return apiClient.sendToKafka<ActivitiesResponse>(
-      KafkaTopic.ACTIVITY_LOG_GET_RECENT,
-      { page, limit, type }
-    );
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (type) {
+        queryParams.append('type', type);
+      }
+
+      const response = await apiClient.get<ActivitiesResponse>(
+        `/api/activity-logs/recent?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener actividades recientes';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener actividades recientes',
+          code: 'GET_RECENT_ACTIVITIES_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**

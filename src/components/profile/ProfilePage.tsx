@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Camera, Lock, Save, X, Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Camera, Lock, Save, X, Eye, EyeOff, Loader2, CheckCircle, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -13,9 +13,10 @@ import { UserAvatar } from '../shared/UserAvatar';
 import { toast } from 'sonner';
 
 export function ProfilePage() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -46,11 +47,36 @@ export function ProfilePage() {
     donaciones: true,
   });
 
+  // Refrescar perfil al montar el componente
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.error('Error al cargar perfil:', error);
+      }
+    };
+    
+    loadProfile();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshProfile();
+      toast.success('Perfil actualizado');
+    } catch (error) {
+      toast.error('Error al actualizar perfil');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleSave = async () => {
@@ -64,7 +90,8 @@ export function ProfilePage() {
       toast.success('Perfil actualizado correctamente');
       setIsEditing(false);
     } catch (error) {
-      toast.error('Error al actualizar el perfil');
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el perfil';
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -112,9 +139,20 @@ export function ProfilePage() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-gray-900 mb-2">Mi Perfil</h1>
-        <p className="text-gray-600">Gestiona tu información personal y preferencias</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-gray-900 mb-2">Mi Perfil</h1>
+          <p className="text-gray-600">Gestiona tu información personal y preferencias</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Actualizando...' : 'Refrescar'}
+        </Button>
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">

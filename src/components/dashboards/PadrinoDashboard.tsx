@@ -31,10 +31,12 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
   const { mySponsoredChild, mySponsorship, children, unreadMessagesCount } = useSponsorship();
 
   const stats = [
-    { label: 'Meses Apadrinando', value: '20', icon: Heart, color: 'from-pink-400 to-pink-500' },
-    { label: 'Donaciones Realizadas', value: '20', icon: DollarSign, color: 'from-green-400 to-green-500' },
-    { label: 'Eventos Asistidos', value: '8', icon: Calendar, color: 'from-purple-400 to-purple-500' },
-    { label: 'Mensajes Enviados', value: '45', icon: MessageCircle, color: 'from-blue-400 to-blue-500' },
+    { label: 'Meses Apadrinando', value: mySponsorship ? Math.floor(
+      (new Date().getTime() - new Date(mySponsorship.fechaInicio).getTime()) / (1000 * 60 * 60 * 24 * 30)
+    ).toString() : '0', icon: Heart, color: 'from-pink-400 to-pink-500' },
+    { label: 'Donaciones Realizadas', value: '0', icon: DollarSign, color: 'from-green-400 to-green-500' },
+    { label: 'Eventos Asistidos', value: '0', icon: Calendar, color: 'from-purple-400 to-purple-500' },
+    { label: 'Mensajes Enviados', value: unreadMessagesCount.toString(), icon: MessageCircle, color: 'from-blue-400 to-blue-500' },
   ];
 
   // Accesos rápidos para el padrino a las secciones clave de su experiencia.
@@ -163,7 +165,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
                     <BookOpen className="w-4 h-4 mr-2" />
                     Ver Perfil Completo
                   </Button>
-                  <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50">
+                  <Button variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => onNavigate('messages')}>
                     <MessageCircle className="w-4 h-4 mr-2" />
                     {unreadMessagesCount > 0 && (
                       <span className="mr-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
@@ -186,8 +188,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
               </div>
               <h2 className="text-gray-900 mb-4">Comienza Tu Viaje de Apadrinamiento</h2>
               <p className="text-gray-600 mb-8">
-                Hay {children.length} niños esperando por un padrino como tú. 
-                Explora nuestro catálogo y encuentra un niño al que puedas apoyar en su desarrollo integral.
+                Aún no tienes un niño apadrinado. Explora nuestro catálogo y encuentra un niño al que puedas apoyar en su desarrollo integral.
               </p>
               <Button
                 onClick={() => onNavigate('catalog')}
@@ -339,4 +340,3 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
     </div>
   );
 }
-

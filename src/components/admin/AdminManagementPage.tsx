@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { authService } from '@/services/auth.service';
 import {
   Search,
   Plus,
@@ -69,42 +70,14 @@ export function AdminManagementPage() {
   const [deactivateReason, setDeactivateReason] = useState('');
 
   // Mock admin data
-  const [admins, setAdmins] = useState<Admin[]>([
-    {
-      id: '1',
-      nombre: 'Admin Principal',
-      email: 'admin@huahuacuna.org',
-      role: 'super_admin',
-      status: 'active',
-      fechaCreacion: '2023-01-15',
-      permissions: ['all'],
-      creadoPor: 'Sistema',
-    },
-    {
-      id: '2',
-      nombre: 'María González',
-      email: 'maria@huahuacuna.org',
-      role: 'admin',
-      status: 'active',
-      fechaCreacion: '2023-02-20',
-      permissions: ['usuarios', 'ninos', 'apadrinamientos', 'eventos'],
-      creadoPor: 'Admin Principal',
-    },
-    {
-      id: '3',
-      nombre: 'Carlos Ramírez',
-      email: 'carlos.admin@huahuacuna.org',
-      role: 'admin',
-      status: 'inactive',
-      fechaCreacion: '2023-05-10',
-      permissions: ['bitacoras', 'eventos', 'voluntariado'],
-      creadoPor: 'Admin Principal',
-    },
-  ]);
+  const [admins, setAdmins] = useState<Admin[]>([]);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [newAdminForm, setNewAdminForm] = useState({
     nombre: '',
     email: '',
+    password: '',
     role: 'admin' as UserRole,
     permissions: [] as string[],
     status: 'active' as UserStatus,
@@ -120,6 +93,36 @@ export function AdminManagementPage() {
     { id: 'voluntariado', label: 'Voluntariado' },
   ];
 
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      if (user?.role !== 'super_admin') return;
+      setIsLoading(true);
+      try {
+        const resp = await authService.listAdmins();
+        if (resp.success && Array.isArray(resp.data)) {
+          const mapped: Admin[] = resp.data.map((u: any) => ({
+            id: String(u.id),
+            nombre: u.name,
+            email: u.email,
+            role: (u.role === 'SUPER_ADMIN' ? 'super_admin' : 'admin') as UserRole,
+            status: (u.status === 'INACTIVE' ? 'inactive' : 'active') as UserStatus,
+            foto: u.avatar,
+            fechaCreacion: new Date(u.createdAt).toISOString().split('T')[0],
+            permissions: [],
+            creadoPor: u.createdBy?.name || 'Sistema',
+          }));
+          setAdmins(mapped);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error al listar administradores';
+        toast.error(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAdmins();
+  }, [user?.role]);
+
   const filteredAdmins = admins.filter(admin => {
     const matchesSearch = admin.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          admin.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -129,38 +132,59 @@ export function AdminManagementPage() {
   });
 
   const handleCreateAdmin = async () => {
+    // Validate role
+    if (user?.role !== 'super_admin') {
+      toast.error('Solo super-admins pueden crear administradores');
+      return;
+    }
+
     // Validate form
-    if (!newAdminForm.nombre || !newAdminForm.email) {
+    if (!newAdminForm.nombre || !newAdminForm.email || !newAdminForm.password) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
     }
 
-    // Check if email already exists
-    if (admins.some(a => a.email === newAdminForm.email)) {
-      toast.error('Este email ya está registrado');
-      return;
+    try {
+      const dto = {
+        name: newAdminForm.nombre,
+        email: newAdminForm.email,
+        password: newAdminForm.password,
+        role: newAdminForm.role === 'super_admin' ? 'SUPER_ADMIN' : 'ADMIN',
+      } as const;
+
+      const resp = await authService.createAdmin(dto);
+
+      if (resp.success && resp.data) {
+        // Map API user to Admin row
+        const apiUser = resp.data as any;
+        const mapped: Admin = {
+          id: String(apiUser.id || `${admins.length + 1}`),
+          nombre: apiUser.name || newAdminForm.nombre,
+          email: apiUser.email || newAdminForm.email,
+          role: (apiUser.role === 'SUPER_ADMIN' ? 'super_admin' : apiUser.role === 'ADMIN' ? 'admin' : 'admin') as UserRole,
+          status: (apiUser.status === 'INACTIVE' ? 'inactive' : 'active') as UserStatus,
+          foto: apiUser.avatar,
+          fechaCreacion: (apiUser.createdAt ? new Date(apiUser.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+          permissions: [],
+          creadoPor: user?.nombre || 'Super Admin',
+        };
+
+        setAdmins([...admins, mapped]);
+        toast.success('Administrador creado exitosamente');
+        setShowCreateDialog(false);
+        setNewAdminForm({
+          nombre: '',
+          email: '',
+          password: '',
+          role: 'admin',
+          permissions: [],
+          status: 'active',
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear administrador';
+      toast.error(message);
     }
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const newAdmin: Admin = {
-      id: `${admins.length + 1}`,
-      ...newAdminForm,
-      fechaCreacion: new Date().toISOString().split('T')[0],
-      creadoPor: user?.nombre || 'Super Admin',
-    };
-
-    setAdmins([...admins, newAdmin]);
-    toast.success('Administrador creado exitosamente. Contraseña temporal enviada por email.');
-    setShowCreateDialog(false);
-    setNewAdminForm({
-      nombre: '',
-      email: '',
-      role: 'admin',
-      permissions: [],
-      status: 'active',
-    });
   };
 
   const handleEditAdmin = async () => {
@@ -330,6 +354,17 @@ export function AdminManagementPage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="password">Contraseña *</Label>
+                          <Input
+                            id="password"
+                            type="password"
+                            value={newAdminForm.password}
+                            onChange={(e) => setNewAdminForm({ ...newAdminForm, password: e.target.value })}
+                            placeholder="AdminPass123"
+                            className="mt-2"
+                          />
+                        </div>
                         <div>
                           <Label htmlFor="role">Rol *</Label>
                           <Select
