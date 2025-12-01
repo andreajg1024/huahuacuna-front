@@ -46,8 +46,60 @@ export class ApadrinamientoService extends BaseService {
   ): Promise<ApiResponse<ChildResponse>> {
     this.validateCreateChildDTO(dto);
 
-    const request: CreateChildRequest = { dto, userId };
-    return apiClient.sendToKafka<ChildResponse>(KafkaTopic.CHILDREN_CREATE, request);
+    // Usar endpoint REST en lugar de Kafka
+    try {
+      const response = await apiClient.post<ChildResponse>('/api/children', dto);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al crear niño';
+
+        // Mapear mensajes según código HTTP
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'Datos inválidos',
+              code: 'INVALID_DATA',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al crear niño',
+          code: 'CREATE_CHILD_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -59,8 +111,70 @@ export class ApadrinamientoService extends BaseService {
   ): Promise<ApiResponse<ChildResponse>> {
     this.validateRequired(dto.id, 'id');
     
-    const request: UpdateChildRequest = { dto, userId };
-    return apiClient.sendToKafka<ChildResponse>(KafkaTopic.CHILDREN_UPDATE, request);
+    try {
+      const { id, ...updateData } = dto;
+      const response = await apiClient.patch<ChildResponse>(`/api/children/${id}`, updateData);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al actualizar niño';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'Datos inválidos',
+              code: 'INVALID_DATA',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Niño no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al actualizar niño',
+          code: 'UPDATE_CHILD_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -72,17 +186,264 @@ export class ApadrinamientoService extends BaseService {
   ): Promise<ApiResponse<void>> {
     this.validateRequired(childId, 'childId');
     
-    return apiClient.sendToKafka<void>(KafkaTopic.CHILDREN_DELETE, {
-      childId,
-      userId,
-    });
+    try {
+      const response = await apiClient.delete<void>(`/api/children/${childId}`);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al eliminar niño';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'No se puede eliminar niño en estado PENDING o SPONSORED',
+              code: 'INVALID_STATE',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Niño no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al eliminar niño',
+          code: 'DELETE_CHILD_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
    * Obtener lista de niños
    */
-  async listChildren(filters?: any): Promise<ApiResponse<ChildResponse[]>> {
-    return apiClient.sendToKafka<ChildResponse[]>(KafkaTopic.CHILDREN_LIST, filters || {});
+  async listChildren(filters?: { page?: number; limit?: number }): Promise<ApiResponse<ChildResponse[]>> {
+    try {
+      const { page = 1, limit = 12 } = filters || {};
+
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<ChildResponse[]>(`/api/children?${queryParams.toString()}`);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener lista de niños';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener lista de niños',
+          code: 'LIST_CHILDREN_ERROR',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Obtener lista de niños disponibles para apadrinar
+   */
+  async getAvailableChildren(filters?: { page?: number; limit?: number }): Promise<ApiResponse<ChildResponse[]>> {
+    try {
+      const { page = 1, limit = 12 } = filters || {};
+
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<ChildResponse[]>(`/api/children/available?${queryParams.toString()}`);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener niños disponibles';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener niños disponibles',
+          code: 'GET_AVAILABLE_CHILDREN_ERROR',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Filtrar niños por rango de edad, género y municipio
+   */
+  async filterChildren(filters?: {
+    gender?: 'MALE' | 'FEMALE';
+    minAge?: number;
+    maxAge?: number;
+    municipality?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<ChildResponse[]>> {
+    try {
+      const {
+        gender,
+        minAge,
+        maxAge,
+        municipality,
+        page = 1,
+        limit = 12
+      } = filters || {};
+
+      // Construir query string solo con parámetros definidos
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      if (gender) {
+        queryParams.append('gender', gender);
+      }
+
+      if (minAge !== undefined) {
+        queryParams.append('minAge', minAge.toString());
+      }
+
+      if (maxAge !== undefined) {
+        queryParams.append('maxAge', maxAge.toString());
+      }
+
+      if (municipality) {
+        queryParams.append('municipality', municipality);
+      }
+
+      const response = await apiClient.get<ChildResponse[]>(`/api/children/filter?${queryParams.toString()}`);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al filtrar niños';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al filtrar niños',
+          code: 'FILTER_CHILDREN_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -91,7 +452,58 @@ export class ApadrinamientoService extends BaseService {
   async getChild(childId: number): Promise<ApiResponse<ChildResponse>> {
     this.validateRequired(childId, 'childId');
     
-    return apiClient.sendToKafka<ChildResponse>(KafkaTopic.CHILDREN_GET, { childId });
+    try {
+      const response = await apiClient.get<ChildResponse>(`/api/children/${childId}`);
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener el niño';
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Niño no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'No tiene permisos suficientes',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener el niño',
+          code: 'GET_CHILD_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -151,10 +563,56 @@ export class ApadrinamientoService extends BaseService {
       this.validateLength(dto.reason, 'reason', 10, 500);
     }
     
-    return apiClient.sendToKafka<SponsorshipRequestResponse>(
-      KafkaTopic.SPONSORSHIP_REQUEST_CREATE,
-      dto
-    );
+    try {
+      // Usar endpoint REST en lugar de Kafka
+      const requestBody = {
+        childId: dto.childId,
+        reason: dto.reason
+      };
+
+      const response = await apiClient.post<SponsorshipRequestResponse>(
+        '/api/sponsorships/requests',
+        requestBody
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al crear solicitud de apadrinamiento';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'El niño no está disponible',
+              code: 'CHILD_NOT_AVAILABLE',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al crear solicitud de apadrinamiento',
+          code: 'CREATE_SPONSORSHIP_REQUEST_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -183,10 +641,67 @@ export class ApadrinamientoService extends BaseService {
     this.validateRequired(dto.rejectionReason, 'rejectionReason');
     this.validateLength(dto.rejectionReason, 'rejectionReason', 10, 500);
     
-    return apiClient.sendToKafka<SponsorshipRequestResponse>(
-      KafkaTopic.SPONSORSHIP_REQUEST_REJECT,
-      dto
-    );
+    try {
+      // Usar endpoint REST en lugar de Kafka
+      const requestBody = {
+        requestId: dto.requestId,
+        rejectionReason: dto.rejectionReason
+      };
+
+      const response = await apiClient.post<SponsorshipRequestResponse>(
+        '/api/sponsorships/requests/reject',
+        requestBody
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al rechazar solicitud';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'Solicitud no válida',
+              code: 'INVALID_REQUEST',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al rechazar solicitud',
+          code: 'REJECT_REQUEST_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -197,10 +712,55 @@ export class ApadrinamientoService extends BaseService {
   ): Promise<ApiResponse<PendingRequestsResponse>> {
     const { page = 1, limit = 12 } = params || {};
     
-    return apiClient.sendToKafka<PendingRequestsResponse>(
-      KafkaTopic.SPONSORSHIP_GET_PENDING_REQUESTS,
-      { page, limit }
-    );
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<PendingRequestsResponse>(
+        `/api/sponsorships/requests/pending?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener solicitudes pendientes';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener solicitudes pendientes',
+          code: 'GET_PENDING_REQUESTS_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -213,54 +773,192 @@ export class ApadrinamientoService extends BaseService {
     
     const { padrinoId, page = 1, limit = 12, activeOnly = false } = params;
     
-    return apiClient.sendToKafka<MySponsorshipsResponse>(
-      KafkaTopic.SPONSORSHIP_GET_MY_SPONSORSHIPS,
-      { padrinoId, page, limit, activeOnly }
-    );
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        activeOnly: activeOnly.toString(),
+      });
+
+      const response = await apiClient.get<MySponsorshipsResponse>(
+        `/api/sponsorships/my?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener mis apadrinamientos';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener mis apadrinamientos',
+          code: 'GET_MY_SPONSORSHIPS_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
    * Obtener detalles de apadrinamiento
    */
   async getSponsorshipDetails(
-    params: GetSponsorshipDetailsParams
+    sponsorshipId: number
   ): Promise<ApiResponse<SponsorshipDetailResponse>> {
-    this.validateRequired(params.sponsorshipId, 'sponsorshipId');
-    this.validateRequired(params.userId, 'userId');
-    this.validateRequired(params.userRole, 'userRole');
-    
-    const validRoles = ['PADRINO', 'ADMIN', 'SUPER_ADMIN'];
-    if (!validRoles.includes(params.userRole)) {
-      throw new Error('userRole debe ser PADRINO, ADMIN o SUPER_ADMIN');
+    this.validateRequired(sponsorshipId, 'sponsorshipId');
+
+    try {
+      const response = await apiClient.get<SponsorshipDetailResponse>(
+        `/api/sponsorships/${sponsorshipId}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener detalles del apadrinamiento';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Apadrinamiento no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener detalles del apadrinamiento',
+          code: 'GET_SPONSORSHIP_DETAILS_ERROR',
+          details: error
+        }
+      };
     }
-    
-    return apiClient.sendToKafka<SponsorshipDetailResponse>(
-      KafkaTopic.SPONSORSHIP_GET_DETAILS,
-      params
-    );
   }
 
   /**
    * Cancelar apadrinamiento
    */
   async cancelSponsorship(
-    dto: CancelSponsorshipDTO
+    sponsorshipId: number,
+    cancellationReason: string
   ): Promise<ApiResponse<SponsorshipDetailResponse>> {
-    this.validateRequired(dto.sponsorshipId, 'sponsorshipId');
-    this.validateRequired(dto.userId, 'userId');
-    this.validateRequired(dto.userRole, 'userRole');
-    this.validateRequired(dto.cancellationReason, 'cancellationReason');
-    this.validateLength(dto.cancellationReason, 'cancellationReason', 10, 500);
-    
-    const validRoles = ['PADRINO', 'ADMIN', 'SUPER_ADMIN'];
-    if (!validRoles.includes(dto.userRole)) {
-      throw new Error('userRole debe ser PADRINO, ADMIN o SUPER_ADMIN');
+    this.validateRequired(sponsorshipId, 'sponsorshipId');
+    this.validateRequired(cancellationReason, 'cancellationReason');
+    this.validateLength(cancellationReason, 'cancellationReason', 10, 500);
+
+    try {
+      const requestBody = {
+        cancellationReason
+      };
+
+      const response = await apiClient.post<SponsorshipDetailResponse>(
+        `/api/sponsorships/${sponsorshipId}/cancel`,
+        requestBody
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al cancelar apadrinamiento';
+
+        if (errorMessage.includes('HTTP 400') || errorMessage.includes('400')) {
+          return {
+            success: false,
+            error: {
+              message: 'Apadrinamiento no válido',
+              code: 'INVALID_SPONSORSHIP',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 404') || errorMessage.includes('404')) {
+          return {
+            success: false,
+            error: {
+              message: 'Apadrinamiento no encontrado',
+              code: 'NOT_FOUND',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al cancelar apadrinamiento',
+          code: 'CANCEL_SPONSORSHIP_ERROR',
+          details: error
+        }
+      };
     }
-    
-    return apiClient.sendToKafka<SponsorshipDetailResponse>(
-      KafkaTopic.SPONSORSHIP_CANCEL,
-      dto
-    );
   }
 
   /**
@@ -271,10 +969,55 @@ export class ApadrinamientoService extends BaseService {
   ): Promise<ApiResponse<SponsorshipHistoryResponse>> {
     const { page = 1, limit = 12 } = params || {};
     
-    return apiClient.sendToKafka<SponsorshipHistoryResponse>(
-      KafkaTopic.SPONSORSHIP_GET_HISTORY,
-      { page, limit }
-    );
+    try {
+      // Construir query string
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+
+      const response = await apiClient.get<SponsorshipHistoryResponse>(
+        `/api/sponsorships/history?${queryParams.toString()}`
+      );
+
+      // Manejo específico de códigos de error HTTP
+      if (!response.success && response.error) {
+        const errorMessage = response.error.message || 'Error al obtener historial de apadrinamientos';
+
+        if (errorMessage.includes('HTTP 401') || errorMessage.includes('401')) {
+          return {
+            success: false,
+            error: {
+              message: 'No autorizado',
+              code: 'UNAUTHORIZED',
+              details: response.error.details
+            }
+          };
+        }
+
+        if (errorMessage.includes('HTTP 403') || errorMessage.includes('403')) {
+          return {
+            success: false,
+            error: {
+              message: 'Sin permisos',
+              code: 'FORBIDDEN',
+              details: response.error.details
+            }
+          };
+        }
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al obtener historial de apadrinamientos',
+          code: 'GET_SPONSORSHIP_HISTORY_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -398,12 +1141,14 @@ export class ApadrinamientoService extends BaseService {
       municipality: localChild.municipio,
       address: localChild.direccion,
       photo: localChild.foto,
-      photos: localChild.fotos,
-      shortDescription: localChild.suenos || '',
+      photos: localChild.fotos || [],
+      needs: localChild.necesidades || [],
+      ethnicity: localChild.etnia,
+      specialCondition: localChild.condicionEspecial,
+      shortDescription: localChild.suenos || localChild.descripcionCorta || '',
       fullStory: [
         localChild.historia,
         localChild.situacionFamiliar,
-        localChild.necesidades?.join(', ')
       ].filter(Boolean).join('\n\n'),
       institution: localChild.institucion,
       grade: localChild.grado,

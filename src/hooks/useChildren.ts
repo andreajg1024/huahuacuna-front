@@ -145,6 +145,69 @@ export function useChildren() {
   };
 
   /**
+   * Obtener lista de niños disponibles para apadrinar
+   */
+  const getAvailableChildren = async (filters?: { page?: number; limit?: number }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await apadrinamientoService.getAvailableChildren(filters);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al cargar niños disponibles');
+      }
+
+      const children = response.data.map(child =>
+        apadrinamientoService.convertFromApiFormat(child)
+      );
+
+      return { success: true, data: children };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar niños disponibles';
+      setError(message);
+      return { success: false, error: message, data: [] };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Filtrar niños por género, edad y municipio
+   */
+  const filterChildren = async (filters?: {
+    gender?: 'MALE' | 'FEMALE';
+    minAge?: number;
+    maxAge?: number;
+    municipality?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await apadrinamientoService.filterChildren(filters);
+
+      if (!response.success || !response.data) {
+        throw new Error(response.error?.message || 'Error al filtrar niños');
+      }
+
+      const children = response.data.map(child =>
+        apadrinamientoService.convertFromApiFormat(child)
+      );
+
+      return { success: true, data: children };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al filtrar niños';
+      setError(message);
+      return { success: false, error: message, data: [] };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
    * Obtener un niño por ID
    */
   const getChild = async (id: string) => {
@@ -180,6 +243,8 @@ export function useChildren() {
     updateChild,
     deleteChild,
     listChildren,
+    getAvailableChildren,
+    filterChildren,
     getChild,
   };
 }

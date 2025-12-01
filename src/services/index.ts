@@ -1,15 +1,15 @@
 /**
  * Services Index
- * 
- * Central export point for all services
+ * Central export point for all service modules
  */
 
-export { authService, AuthService } from './auth.service';
-export { apadrinamientoService, ApadrinamientoService } from './apadrinamiento.service';
-export { projectsService, ProjectsService } from './projects.service';
-export { donationsService, DonationsService } from './donations.service';
-export { newsService, NewsService } from './news.service';
-export { volunteeringService, VolunteeringService } from './volunteering.service';
-export { bitacoraService, BitacoraService } from './bitacora.service';
-export { activityLogsService, ActivityLogsService } from './activity-logs.service';
-export { BaseService } from './base.service';
+export * from './auth.service';
+export * from './apadrinamiento.service';
+export * from './donations.service';
+export * from './news.service';
+export * from './projects.service';
+export * from './volunteering.service';
+export * from './bitacora.service';
+export * from './activity-logs.service';
+export * from './chat.service';
+export * from './base.service';

@@ -24,10 +24,10 @@ import {
   ApiError,
 } from '../types/api.types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export class AuthService extends BaseService {
-  private baseUrl = `${API_BASE_URL}/auth`;
+  private baseUrl = `${API_BASE_URL}/api/auth`;
 
   /**
    * POST /auth/register
@@ -48,7 +48,11 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 409 (Email o documento ya registrado)
+        if (response.status === 409) {
+          throw new Error('El email o documento ya está registrado');
+        }
+        throw new Error(data.message || 'Error al registrar usuario');
       }
 
       return {
@@ -56,7 +60,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al registrar usuario. Intenta nuevamente.');
     }
   }
 
@@ -68,6 +75,8 @@ export class AuthService extends BaseService {
     this.validateLoginDTO(dto);
 
     try {
+      console.log('🔐 Intentando login con:', { email: dto.email });
+
       const response = await fetch(`${this.baseUrl}/login`, {
         method: 'POST',
         headers: {
@@ -76,29 +85,100 @@ export class AuthService extends BaseService {
         body: JSON.stringify(dto),
       });
 
-      const data = await response.json();
+      console.log('📡 Status de respuesta:', response.status);
+
+      const rawData = await response.json();
+      console.log('📦 Datos recibidos del backend:', rawData);
+      console.log('📦 Estructura completa:', JSON.stringify(rawData, null, 2));
+      console.log('📦 Claves del objeto:', Object.keys(rawData));
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 401 (Credenciales inválidas)
+        if (response.status === 401) {
+          return {
+            success: false,
+            error: {
+              message: 'Credenciales inválidas',
+              code: 'INVALID_CREDENTIALS'
+            }
+          };
+        }
+        
+        // Manejar error 403 (Cuenta bloqueada o inactiva)
+        if (response.status === 403) {
+          return {
+            success: false,
+            error: {
+              message: 'Cuenta bloqueada o inactiva. Contacta al administrador.',
+              code: 'ACCOUNT_BLOCKED'
+            }
+          };
+        }
+        
+        return {
+          success: false,
+          error: {
+            message: rawData.message || 'Error al iniciar sesión',
+            code: 'LOGIN_ERROR'
+          }
+        };
+      }
+
+      // El backend puede devolver los datos directamente o dentro de un objeto "data"
+      // Intentar ambas estructuras
+      let loginData = rawData;
+
+      // Si los datos están dentro de rawData.data, usar esos
+      if (rawData.data && typeof rawData.data === 'object') {
+        console.log('📦 Datos están anidados en rawData.data');
+        loginData = rawData.data;
+      }
+
+      // Validar que la respuesta tenga los campos necesarios
+      console.log('🔍 Validando estructura de respuesta...');
+      console.log('  - loginData.user existe?', !!loginData.user);
+      console.log('  - loginData.accessToken existe?', !!loginData.accessToken);
+      console.log('  - loginData.user completo:', JSON.stringify(loginData.user, null, 2));
+
+      if (!loginData.user || !loginData.accessToken) {
+        console.error('❌ Respuesta del backend sin estructura esperada:', rawData);
+        console.error('❌ loginData procesado:', loginData);
+        return {
+          success: false,
+          error: {
+            message: 'Respuesta del servidor inválida',
+            code: 'INVALID_RESPONSE'
+          }
+        };
       }
 
       // Guardar tokens en localStorage
-      if (data.accessToken) {
-        localStorage.setItem('auth_token', data.accessToken);
+      if (loginData.accessToken) {
+        localStorage.setItem('auth_token', loginData.accessToken);
       }
-      if (data.refreshToken) {
-        localStorage.setItem('refresh_token', data.refreshToken);
+      if (loginData.refreshToken) {
+        localStorage.setItem('refresh_token', loginData.refreshToken);
       }
-      if (data.user) {
-        localStorage.setItem('auth_user', JSON.stringify(data.user));
-      }
+
+      console.log('✅ Login exitoso, retornando datos');
 
       return {
         success: true,
-        data: data,
+        data: {
+          user: loginData.user,
+          accessToken: loginData.accessToken,
+          refreshToken: loginData.refreshToken
+        }
       };
     } catch (error) {
-      throw this.handleError(error);
+      console.error('💥 Error en login:', error);
+      return {
+        success: false,
+        error: {
+          message: error instanceof Error ? error.message : 'Error al iniciar sesión. Intenta nuevamente.',
+          code: 'NETWORK_ERROR'
+        }
+      };
     }
   }
 
@@ -121,7 +201,12 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 400 (Token inválido o expirado)
+        if (response.status === 400) {
+          throw new Error('Token inválido o expirado');
+        }
+        
+        throw new Error(data.message || 'Error al verificar email');
       }
 
       return {
@@ -129,7 +214,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al verificar email. Intenta nuevamente.');
     }
   }
 
@@ -158,7 +246,7 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        throw new Error(data.message || 'Error al solicitar reseteo de contraseña');
       }
 
       return {
@@ -166,7 +254,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al solicitar reseteo de contraseña. Intenta nuevamente.');
     }
   }
 
@@ -191,7 +282,12 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 400 (Token inválido o expirado)
+        if (response.status === 400) {
+          throw new Error('El enlace ha expirado o es inválido. Solicita uno nuevo.');
+        }
+        
+        throw new Error(data.message || 'Error al restablecer contraseña');
       }
 
       return {
@@ -199,7 +295,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al restablecer contraseña. Intenta nuevamente.');
     }
   }
 
@@ -222,7 +321,14 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 401 (Refresh token inválido o expirado)
+        if (response.status === 401) {
+          // Limpiar tokens y forzar re-login
+          this.clearAuthData();
+          throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+        }
+        
+        throw new Error(data.message || 'Error al refrescar token');
       }
 
       // Actualizar tokens
@@ -238,7 +344,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al refrescar token. Intenta nuevamente.');
     }
   }
 
@@ -259,22 +368,35 @@ export class AuthService extends BaseService {
         body: JSON.stringify(dto),
       });
 
-      const data = await response.json();
-
       // Limpiar tokens localmente independientemente del resultado
       this.clearAuthData();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Si el logout falla en el backend, registrar pero no fallar
+        console.warn('Logout en backend falló, pero tokens locales fueron limpiados');
+        return {
+          success: true,
+          data: { message: 'Sesión cerrada localmente' },
+        };
       }
+
+      const data = await response.json();
 
       return {
         success: true,
         data: data,
       };
     } catch (error) {
+      // Asegurar limpieza de tokens incluso si hay error
       this.clearAuthData();
-      throw this.handleError(error);
+      
+      // No lanzar error para logout, solo loguear
+      console.error('Error en logout:', error);
+      
+      return {
+        success: true,
+        data: { message: 'Sesión cerrada localmente' },
+      };
     }
   }
 
@@ -296,7 +418,12 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 401 (Token inválido o expirado)
+        if (response.status === 401) {
+          throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+        }
+        
+        throw new Error(data.message || 'Error al obtener perfil');
       }
 
       // Actualizar user en localStorage
@@ -307,7 +434,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al obtener perfil. Intenta nuevamente.');
     }
   }
 
@@ -331,7 +461,17 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // Manejar error 403 (Solo padrinos pueden actualizar)
+        if (response.status === 403) {
+          throw new Error('Solo los padrinos pueden actualizar su perfil');
+        }
+        
+        // Manejar error 401 (Sesión expirada)
+        if (response.status === 401) {
+          throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+        }
+        
+        throw new Error(data.message || 'Error al actualizar perfil');
       }
 
       // Actualizar user en localStorage
@@ -342,7 +482,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al actualizar perfil. Intenta nuevamente.');
     }
   }
 
@@ -367,7 +510,15 @@ export class AuthService extends BaseService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw this.handleError(data, response.status);
+        // 403: Solo super-admins pueden crear administradores
+        if (response.status === 403) {
+          throw new Error('Solo super-admins pueden crear administradores');
+        }
+        // 409: Email ya registrado
+        if (response.status === 409) {
+          throw new Error('Email ya registrado');
+        }
+        throw new Error(data.message || 'Error al crear administrador');
       }
 
       return {
@@ -375,7 +526,10 @@ export class AuthService extends BaseService {
         data: data,
       };
     } catch (error) {
-      throw this.handleError(error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al crear administrador. Intenta nuevamente.');
     }
   }
 
@@ -411,6 +565,45 @@ export class AuthService extends BaseService {
       };
     } catch (error) {
       throw this.handleError(error);
+    }
+  }
+
+  /**
+   * GET /auth/admins
+   * Listar administradores (solo SUPER_ADMIN)
+   */
+  async listAdmins(): Promise<ApiResponse<UserResponse[]>> {
+    const token = this.getAuthToken();
+
+    try {
+      const response = await fetch(`${this.baseUrl}/admins`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Solo super-admins pueden listar administradores');
+        }
+        if (response.status === 401) {
+          throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.');
+        }
+        throw new Error(data.message || 'Error al listar administradores');
+      }
+
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Error al listar administradores. Intenta nuevamente.');
     }
   }
 
