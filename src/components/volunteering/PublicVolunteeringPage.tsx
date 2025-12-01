@@ -64,15 +64,7 @@ export const PublicVolunteeringPage: React.FC = () => {
               <Heart className="w-5 h-5 mr-2" />
               Quiero ser Voluntario
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="bg-white/10 hover:bg-white/20 text-white border-white text-lg px-8 py-6"
-              onClick={() => window.scrollTo({ top: 700, behavior: 'smooth' })}
-            >
-              Conoce Más
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            {/* Botón "Conoce Más" removido según requerimiento */}
           </div>
 
           {/* Stats Cards */}

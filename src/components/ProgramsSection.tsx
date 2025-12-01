@@ -118,7 +118,7 @@ export function ProgramsSection() {
               <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Heart className="w-10 h-10 text-white fill-white" />
               </div>
-              <h2 className="text-gray-900 mb-4">{mainProgram.title}</h2>
+              <h2 id="programa-apadrinamiento" className="text-gray-900 mb-4">{mainProgram.title}</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
                 {mainProgram.description}
               </p>
@@ -138,18 +138,13 @@ export function ProgramsSection() {
               ))}
             </div>
 
-            <div className="text-center mt-8">
-              <Button className="bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-600 hover:to-emerald-600 text-white px-8">
-                <Heart className="w-4 h-4 mr-2" />
-                Apadrinar un Niño Ahora
-              </Button>
-            </div>
+            {/* CTA de apadrinamiento removido según requerimiento */}
           </div>
         </div>
 
         {/* Additional Programs */}
         <div className="mb-20">
-          <h2 className="text-gray-900 text-center mb-12">Programas Complementarios</h2>
+          <h2 id="programas-complementarios" className="text-gray-900 text-center mb-12">Programas Complementarios</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {additionalPrograms.map((program, index) => (
               <Card key={index} className={`border-2 ${program.color} bg-gradient-to-br ${program.bgColor} overflow-hidden group hover:shadow-xl transition-shadow`}>
@@ -169,10 +164,6 @@ export function ProgramsSection() {
                 <CardContent className="p-6">
                   <h3 className="text-gray-900 mb-3">{program.title}</h3>
                   <p className="text-gray-600 mb-4">{program.description}</p>
-                  <Button variant="ghost" className="text-amber-600 hover:text-amber-700 p-0">
-                    Más información
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -186,7 +177,7 @@ export function ProgramsSection() {
               <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mb-6">
                 <Sparkles className="w-7 h-7 text-white" />
               </div>
-              <h2 className="text-gray-900 mb-4">Ayudas Ocasionales</h2>
+              <h2 id="ayudas-ocasionales" className="text-gray-900 mb-4">Ayudas Ocasionales</h2>
               <p className="text-gray-600 mb-6">
                 Además de nuestros programas regulares, brindamos apoyo en situaciones especiales 
                 que requieren atención inmediata para garantizar el bienestar de los niños.

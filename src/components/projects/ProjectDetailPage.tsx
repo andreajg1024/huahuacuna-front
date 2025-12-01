@@ -7,7 +7,7 @@ import { Separator } from '../ui/separator';
 import { 
   ArrowLeft, Calendar, MapPin, Users, Clock, Share2, 
   Mail, Phone, Target, Heart, CheckCircle2, Facebook,
-  Twitter, Link as LinkIcon, Tag
+  Link as LinkIcon, Tag
 } from 'lucide-react';
 import type { Project } from '../../contexts/ProjectsContext';
 import { ProjectStatusBadge } from './ProjectStatusBadge';
@@ -20,11 +20,11 @@ interface ProjectDetailPageProps {
   onVolunteer: (project: Project) => void;
 }
 
-export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
+export function ProjectDetailPage({
   project,
   onClose,
-  onVolunteer
-}) => {
+  onVolunteer,
+}: ProjectDetailPageProps) {
   const [showAllImages, setShowAllImages] = useState(false);
 
   const formatDate = (date: string) => {
@@ -47,16 +47,13 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
     ? (project.volunteersRegistered / project.volunteersNeeded) * 100 
     : 0;
 
-  const handleShare = (platform: 'facebook' | 'twitter' | 'whatsapp' | 'copy') => {
+  const handleShare = (platform: 'facebook' | 'whatsapp' | 'copy') => {
     const url = window.location.href;
     const text = `${project.title} - Fundación Huahuacuna`;
 
     switch (platform) {
       case 'facebook':
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-        break;
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
         break;
       case 'whatsapp':
         window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
@@ -70,17 +67,17 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div 
+      
+      <div
         className="relative h-96 bg-gray-900"
         style={{
           backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('${project.mainImage}')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          backgroundPosition: 'center',
         }}
       >
         <div className="absolute inset-0 flex flex-col justify-between p-6">
-          {/* Top Bar */}
+          
           <div className="flex items-center justify-between">
             <Button
               variant="secondary"
@@ -93,7 +90,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
             <ProjectStatusBadge status={project.status} className="bg-white/90" />
           </div>
 
-          {/* Bottom Content */}
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl mb-4">{project.title}</h1>
             <div className="flex flex-wrap gap-4 items-center">
@@ -111,7 +107,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Share Buttons */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between">
@@ -121,9 +116,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => handleShare('facebook')}>
                 <Facebook className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleShare('twitter')}>
-                <Twitter className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => handleShare('whatsapp')}>
                 <Share2 className="w-4 h-4" />
@@ -136,12 +128,12 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
+          
+          {/* LEFT COLUMN */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Overview */}
             <Card>
               <CardContent className="p-6">
                 <p className="text-lg text-gray-700 leading-relaxed">
@@ -150,7 +142,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </CardContent>
             </Card>
 
-            {/* Full Description */}
             <Card>
               <CardHeader>
                 <CardTitle>Descripción del Proyecto</CardTitle>
@@ -163,7 +154,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </CardContent>
             </Card>
 
-            {/* Objectives */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -195,7 +185,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </CardContent>
             </Card>
 
-            {/* Beneficiaries & Impact */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -226,7 +215,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </CardContent>
             </Card>
 
-            {/* Gallery */}
             {project.gallery.length > 0 && (
               <Card>
                 <CardHeader>
@@ -261,7 +249,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </Card>
             )}
 
-            {/* Video */}
             {project.videoUrl && (
               <Card>
                 <CardHeader>
@@ -275,7 +262,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </Card>
             )}
 
-            {/* Partners */}
             {project.partners && (
               <Card>
                 <CardHeader>
@@ -288,17 +274,19 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
             )}
           </div>
 
-          {/* Right Column - Sidebar */}
+          {/* RIGHT COLUMN */}
           <div className="space-y-6">
-            {/* Info Card */}
-            <Card className="sticky top-6">
+
+            {/* Info Card (comentario corregido) */}
+            <Card>
               <CardHeader>
                 <CardTitle>Información Rápida</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm text-gray-600">Fecha de Inicio</p>
                     <p>{formatDate(project.startDate)}</p>
                   </div>
@@ -306,7 +294,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm text-gray-600">Fecha de Fin</p>
                     <p>{formatDate(project.endDate)}</p>
                   </div>
@@ -314,7 +302,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm text-gray-600">Duración</p>
                     <p>{getDuration()}</p>
                   </div>
@@ -322,7 +310,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm text-gray-600">Ubicación</p>
                     <p>{project.location.join(', ')}</p>
                   </div>
@@ -330,7 +318,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
 
                 <div className="flex items-start gap-3">
                   <Users className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
+                  <div>
                     <p className="text-sm text-gray-600">Beneficiarios</p>
                     <p>{project.beneficiaries.count} personas</p>
                   </div>
@@ -357,7 +345,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </CardContent>
             </Card>
 
-            {/* Volunteer CTA Card */}
             {project.needsVolunteers ? (
               <Card className="border-[#F4B223] border-2">
                 <CardHeader className="bg-gradient-to-br from-[#F4B223]/10 to-[#F4B223]/5">
@@ -441,7 +428,6 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
               </Card>
             )}
 
-            {/* Contact Card */}
             <Card>
               <CardHeader>
                 <CardTitle>Más Información</CardTitle>
@@ -466,5 +452,4 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({
       </div>
     </div>
   );
-};
-
+}

@@ -7,6 +7,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Card, CardContent } from '../ui/card';
 import { useAuth } from '../../contexts/AuthContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { BackButton } from '../shared/BackButton';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
@@ -51,6 +52,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
       {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
+          <BackButton onBack={() => onNavigate('home')} />
           {/* Logo and Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-4">

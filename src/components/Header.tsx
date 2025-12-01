@@ -29,7 +29,6 @@ export function Header({ onNavigate, currentSection }: HeaderProps) {
   const moreLinks = [
     { id: 'proyectos', label: 'Proyectos' },
     { id: 'voluntariado', label: 'Voluntariado' },
-    { id: 'noticias', label: 'Noticias' },
     { id: 'eventos', label: 'Eventos' },
     { id: 'contacto', label: 'Contacto' },
   ];

@@ -4,7 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { 
   CheckCircle2, XCircle, Clock, Download, Share2,
-  Facebook, Twitter, Mail, Heart, AlertCircle, Home
+  Facebook, Mail, Heart, AlertCircle, Home
 } from 'lucide-react';
 import { useDonations } from '../../contexts/DonationsContext';
 
@@ -81,9 +81,6 @@ export const DonationConfirmationPage: React.FC<DonationConfirmationPageProps> =
     switch (platform) {
       case 'facebook':
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(url)}`;
         break;
       case 'whatsapp':
         shareUrl = `https://wa.me/?text=${encodeURIComponent(message + ' ' + url)}`;
@@ -264,14 +261,6 @@ export const DonationConfirmationPage: React.FC<DonationConfirmationPageProps> =
                 >
                   <Facebook className="w-4 h-4 mr-1" />
                   Facebook
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-[#1DA1F2] hover:bg-[#1DA1F2]/90"
-                  onClick={() => handleShare('twitter')}
-                >
-                  <Twitter className="w-4 h-4 mr-1" />
-                  Twitter
                 </Button>
                 <Button
                   size="sm"

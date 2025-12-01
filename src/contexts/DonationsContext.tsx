@@ -100,12 +100,152 @@ export interface InKindDonation {
   processedBy?: string;
 }
 
+// Datos mock iniciales para pruebas rápidas (donaciones monetarias y en especie)
+const MOCK_DONATIONS: Donation[] = [
+  {
+    id: 'donation-mock-1',
+    transactionId: 'DON-202501-0001',
+    amount: 150000,
+    currency: 'COP',
+    donorId: undefined,
+    donorName: 'María Gómez',
+    donorIdType: 'Cédula de Ciudadanía',
+    donorIdNumber: '123456789',
+    donorEmail: 'maria.gomez@example.com',
+    donorPhone: '+57 300 123 4567',
+    donorAddress: 'Calle 10 #5-20',
+    donorCity: 'Armenia',
+    donorCountry: 'Colombia',
+    isAnonymous: false,
+    destination: 'Educación',
+    donationType: 'monetaria',
+    isRecurring: false,
+    paymentMethod: 'pse',
+    pseReference: 'PSE-REF-001',
+    pseBank: 'Bancolombia',
+    pseResponse: undefined,
+    status: 'aprobada',
+    statusReason: undefined,
+    approvedAt: '2025-01-10T10:00:00.000Z',
+    rejectedAt: undefined,
+    receiptUrl: undefined,
+    certificateUrl: undefined,
+    certificateNumber: 'CERT-2025-0001',
+    certificateGeneratedAt: '2025-01-10T10:01:00.000Z',
+    confirmationEmailSent: true,
+    confirmationEmailSentAt: '2025-01-10T10:02:00.000Z',
+    registeredBy: 'system',
+    adminNotes: 'Donación de prueba',
+    createdAt: '2025-01-10T10:00:00.000Z',
+    updatedAt: '2025-01-10T10:02:00.000Z',
+    ipAddress: '127.0.0.1',
+  },
+  {
+    id: 'donation-mock-2',
+    transactionId: 'DON-202501-0002',
+    amount: 80000,
+    currency: 'COP',
+    donorId: undefined,
+    donorName: 'Juan Pérez',
+    donorIdType: 'Cédula de Ciudadanía',
+    donorIdNumber: '987654321',
+    donorEmail: 'juan.perez@example.com',
+    donorPhone: '+57 310 555 8899',
+    donorAddress: 'Carrera 15 #8-30',
+    donorCity: 'Armenia',
+    donorCountry: 'Colombia',
+    isAnonymous: false,
+    destination: 'General',
+    donationType: 'monetaria',
+    isRecurring: false,
+    paymentMethod: 'transferencia',
+    pseReference: undefined,
+    pseBank: undefined,
+    pseResponse: undefined,
+    status: 'aprobada',
+    statusReason: undefined,
+    approvedAt: '2025-01-08T14:30:00.000Z',
+    rejectedAt: undefined,
+    receiptUrl: undefined,
+    certificateUrl: undefined,
+    certificateNumber: 'CERT-2025-0002',
+    certificateGeneratedAt: '2025-01-08T14:31:00.000Z',
+    confirmationEmailSent: true,
+    confirmationEmailSentAt: '2025-01-08T14:32:00.000Z',
+    registeredBy: 'system',
+    adminNotes: 'Donación recurrente simulada',
+    createdAt: '2025-01-08T14:30:00.000Z',
+    updatedAt: '2025-01-08T14:32:00.000Z',
+    ipAddress: '127.0.0.1',
+  },
+  {
+    id: 'donation-mock-3',
+    transactionId: 'DON-202412-0003',
+    amount: 40000,
+    currency: 'COP',
+    donorId: undefined,
+    donorName: 'Donante Anónimo',
+    donorIdType: 'Cédula de Ciudadanía',
+    donorIdNumber: '000000000',
+    donorEmail: 'anonimo@example.com',
+    donorPhone: undefined,
+    donorAddress: undefined,
+    donorCity: 'Armenia',
+    donorCountry: 'Colombia',
+    isAnonymous: true,
+    destination: 'Salud y Nutrición',
+    donationType: 'monetaria',
+    isRecurring: false,
+    paymentMethod: 'efectivo',
+    pseReference: undefined,
+    pseBank: undefined,
+    pseResponse: undefined,
+    status: 'aprobada',
+    statusReason: undefined,
+    approvedAt: '2024-12-20T09:15:00.000Z',
+    rejectedAt: undefined,
+    receiptUrl: undefined,
+    certificateUrl: undefined,
+    certificateNumber: undefined,
+    certificateGeneratedAt: undefined,
+    confirmationEmailSent: false,
+    confirmationEmailSentAt: undefined,
+    registeredBy: 'system',
+    adminNotes: 'Donación en efectivo simulada',
+    createdAt: '2024-12-20T09:15:00.000Z',
+    updatedAt: '2024-12-20T09:15:00.000Z',
+    ipAddress: '127.0.0.1',
+  },
+];
+
+const MOCK_IN_KIND_DONATIONS: InKindDonation[] = [
+  {
+    id: 'inkind-mock-1',
+    donorName: 'Lucía Ramírez',
+    donorEmail: 'lucia.ramirez@example.com',
+    donorPhone: '+57 311 222 3344',
+    donationType: 'Útiles Escolares',
+    description: '20 kits escolares completos para primaria',
+    estimatedValue: 600000,
+    requiresPickup: true,
+    pickupAddress: 'Barrio Centro, Armenia',
+    preferredDate: '2025-01-25',
+    status: 'coordinada',
+    comments: 'Disponibles en horario de oficina',
+    internalNotes: 'Mock inicial para reportes',
+    contactedAt: '2025-01-15T09:00:00.000Z',
+    receivedAt: undefined,
+    createdAt: '2025-01-10T08:00:00.000Z',
+    processedBy: 'admin-mock',
+  },
+];
+
 interface DonationsContextType {
   donations: Donation[];
   inKindDonations: InKindDonation[];
   
   // Monetary donations
-  createDonation: (donation: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>) => string;
+  createDonation: (donation: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>) => Donation;
   updateDonation: (id: string, updates: Partial<Donation>) => void;
   getDonationById: (id: string) => Donation | undefined;
   getDonationByTransactionId: (transactionId: string) => Donation | undefined;
@@ -132,8 +272,8 @@ interface DonationsContextType {
 const DonationsContext = createContext<DonationsContextType | undefined>(undefined);
 
 export const DonationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [inKindDonations, setInKindDonations] = useState<InKindDonation[]>([]);
+  const [donations, setDonations] = useState<Donation[]>(MOCK_DONATIONS);
+  const [inKindDonations, setInKindDonations] = useState<InKindDonation[]>(MOCK_IN_KIND_DONATIONS);
 
   const generateTransactionId = (): string => {
     const date = new Date();
@@ -147,7 +287,7 @@ export const DonationsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return amount >= 50000; // RF-036: Certificate for donations >$50,000
   };
 
-  const createDonation = (donationData: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>) => {
+  const createDonation = (donationData: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>): Donation => {
     const id = `donation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const transactionId = generateTransactionId();
     const now = new Date().toISOString();
@@ -158,11 +298,11 @@ export const DonationsProvider: React.FC<{ children: ReactNode }> = ({ children 
       transactionId,
       createdAt: now,
       updatedAt: now,
-      confirmationEmailSent: false
+      confirmationEmailSent: false,
     };
 
     setDonations(prev => [...prev, newDonation]);
-    return id;
+    return newDonation;
   };
 
   const updateDonation = (id: string, updates: Partial<Donation>) => {

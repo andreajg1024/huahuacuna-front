@@ -95,13 +95,6 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       onClick: () => onNavigate('volunteering-applications'),
     },
     {
-      title: 'Noticias y Blog',
-      description: 'Publicar noticias y actualizaciones',
-      icon: FileText,
-      color: 'from-indigo-400 to-indigo-500',
-      onClick: () => onNavigate('news-management'),
-    },
-    {
       title: 'Gestión de Donaciones',
       description: 'Administrar donaciones y reportes',
       icon: DollarSign,

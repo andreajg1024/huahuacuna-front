@@ -174,7 +174,7 @@ export function EventsSection() {
                   <h3 className="text-gray-900 mb-3">{event.title}</h3>
                   <p className="text-gray-600 mb-4">{event.description}</p>
                   
-                  <div className="space-y-2 mb-4 text-sm text-gray-600">
+                  <div className="space-y-2 mb-2 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500" />
                       <span>{event.time}</span>
@@ -188,11 +188,6 @@ export function EventsSection() {
                       <span>{event.attendees}</span>
                     </div>
                   </div>
-                  
-                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white">
-                    Inscribirse al Evento
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -241,23 +236,7 @@ export function EventsSection() {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="mt-20 bg-gradient-to-r from-amber-500 to-emerald-500 rounded-2xl p-12 text-center text-white">
-          <Calendar className="w-16 h-16 mx-auto mb-6" />
-          <h2 className="text-white mb-4">¿Quieres Participar en Nuestros Eventos?</h2>
-          <p className="text-lg mb-8 max-w-2xl mx-auto opacity-90">
-            Únete a nuestra comunidad y sé parte de estas experiencias transformadoras. 
-            Tu presencia hace la diferencia.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-white text-gray-900 hover:bg-gray-100 px-8">
-              Suscribirse al Calendario
-            </Button>
-            <Button variant="outline" className="border-2 border-white text-white hover:bg-white/10">
-              Contactar Coordinador de Eventos
-            </Button>
-          </div>
-        </div>
+        {/* CTA de eventos removida según requerimiento */}
       </div>
     </div>
   );

@@ -105,14 +105,6 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
       onClick: () => onNavigate('volunteering-applications'),
     },
     {
-      title: 'Noticias y Blog',
-      description: 'Publicar noticias y actualizaciones',
-      icon: FileText,
-      color: 'from-indigo-400 to-indigo-500',
-      permission: 'ninos',
-      onClick: () => onNavigate('news-management'),
-    },
-    {
       title: 'Gestión de Donaciones',
       description: 'Administrar donaciones y reportes',
       icon: DollarSign,

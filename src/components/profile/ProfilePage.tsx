@@ -11,8 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserAvatar } from '../shared/UserAvatar';
 import { toast } from 'sonner';
+import { BackButton } from '../shared/BackButton';
 
-export function ProfilePage() {
+interface ProfilePageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function ProfilePage({ onNavigate }: ProfilePageProps) {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,6 +116,7 @@ export function ProfilePage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      <BackButton onBack={() => onNavigate ? onNavigate('dashboard') : undefined} />
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Mi Perfil</h1>

@@ -15,7 +15,6 @@ import {
 import { useDonations } from '../../contexts/DonationsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
-import { useNavigate } from './DonationConfirmationPage';
 
 interface MonetaryDonationFormProps {
   onClose?: () => void;
@@ -144,7 +143,8 @@ export const MonetaryDonationForm: React.FC<MonetaryDonationFormProps> = ({ onCl
 
     try {
       // Create donation record (RF-034, RF-035)
-      const donationId = createDonation({
+      // En este entorno de demo marcamos la donación como "aprobada" inmediatamente
+      const donation = createDonation({
         amount: selectedAmount,
         currency: 'COP',
         donorId: user?.id,
@@ -161,24 +161,91 @@ export const MonetaryDonationForm: React.FC<MonetaryDonationFormProps> = ({ onCl
         donationType: 'monetaria',
         isRecurring: false,
         paymentMethod: formData.paymentMethod as any,
-        status: 'pendiente' // Will be updated after PSE callback
+        status: 'aprobada',
+        statusReason: undefined,
+        approvedAt: new Date().toISOString(),
+        rejectedAt: undefined,
+        receiptUrl: undefined,
+        certificateUrl: undefined,
+        certificateNumber: undefined,
+        certificateGeneratedAt: undefined,
+        confirmationEmailSentAt: undefined,
+        registeredBy: 'system',
+        adminNotes: undefined,
+        ipAddress: undefined,
       });
 
-      // In a real implementation, this would redirect to PSE (RF-034)
-      // For now, we'll simulate the process
-      toast.success('Redirigiendo a PSE...');
-      
-      // Simulate PSE redirect
-      setTimeout(() => {
-        // Simulate successful payment
-        const txId = `DON-${Date.now()}`;
-        setTransactionId(txId);
-        
-        // In real app: window.location.href = PSE_URL
-        // For demo: show confirmation
-        window.location.href = `/donaciones/confirmacion?ref=${txId}&status=aprobada`;
-      }, 1500);
+      setTransactionId(donation.transactionId);
 
+      // Generar y descargar comprobante PDF verificado (RF - comprobante PDF)
+      try {
+        const { jsPDF } = await import('jspdf');
+        const doc = new jsPDF();
+
+        const issuedAt = new Date();
+        const issuedAtStr = issuedAt.toLocaleString('es-CO');
+
+        doc.setFontSize(18);
+        doc.text('Comprobante de Donación Verificada', 20, 20);
+
+        doc.setFontSize(12);
+        doc.text('Fundación Huahuacuna', 20, 30);
+        doc.text(`Fecha de emisión: ${issuedAtStr}`, 20, 38);
+
+        doc.setFontSize(14);
+        doc.text('Datos del Donante', 20, 52);
+        doc.setFontSize(12);
+        doc.text(`Nombre: ${donation.donorName}`, 20, 60);
+        doc.text(`Documento: ${donation.donorIdType} ${donation.donorIdNumber}`, 20, 68);
+        doc.text(`Email: ${donation.donorEmail}`, 20, 76);
+        if (donation.donorPhone) {
+          doc.text(`Teléfono: ${donation.donorPhone}`, 20, 84);
+        }
+
+        doc.setFontSize(14);
+        doc.text('Detalle de la Donación', 20, 100);
+        doc.setFontSize(12);
+        doc.text(`Monto: ${formatCurrency(donation.amount)}`, 20, 108);
+        doc.text(`Moneda: ${donation.currency}`, 20, 116);
+        doc.text(`Destino: ${donation.destination || 'General'}`, 20, 124);
+        doc.text(`ID de transacción: ${donation.transactionId}`, 20, 132);
+
+        const verificationLines = [
+          'Certificamos que esta donación ha sido recibida por la Fundación Huahuacuna,',
+          'y que los recursos se destinan directamente a los programas sociales de la fundación.',
+          'Este comprobante digital ha sido generado y verificado automáticamente por el sistema.',
+        ];
+
+        doc.setFontSize(12);
+        let y = 148;
+        verificationLines.forEach((line) => {
+          doc.text(line, 20, y);
+          y += 8;
+        });
+
+        if (donation.certificateNumber) {
+          doc.text(`Número de certificado tributario: ${donation.certificateNumber}`, 20, y + 4);
+        }
+
+        doc.setFontSize(10);
+        doc.text(
+          'Este documento es válido únicamente para efectos informativos y de soporte de la donación realizada.',
+          20,
+          190,
+        );
+
+        doc.save(`donacion-${donation.transactionId}.pdf`);
+      } catch (pdfError) {
+        // No bloqueamos el flujo si el PDF falla, solo notificamos
+        console.error('Error generando PDF de donación:', pdfError);
+        toast.error('La donación fue registrada, pero hubo un error al generar el PDF.');
+      }
+
+      // Mensaje de éxito general
+      toast.success('Donación registrada y comprobante generado correctamente.');
+
+      // En una integración real aquí se redirigiría a la pasarela de pago o a una página de confirmación
+      // window.location.href = `/donaciones/confirmacion?ref=${donation.transactionId}&status=aprobada`;
     } catch (error) {
       toast.error('Error al procesar la donación');
       console.error(error);

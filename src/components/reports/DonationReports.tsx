@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useReports } from '../../contexts/ReportsContext';
 import { useDonations } from '../../contexts/DonationsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, ComposedChart,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area
@@ -48,7 +49,8 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
     getDonationByProgram
   } = useReports();
 
-  const { donations } = useDonations();
+  const { user } = useAuth();
+  const { donations, inKindDonations } = useDonations();
 
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -65,6 +67,117 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
   const byMethod = getDonationByMethod();
   const byProgram = getDonationByProgram();
 
+  const role = user?.role;
+  const isSuperAdmin = role === 'super_admin';
+  const isAdmin = role === 'admin';
+
+  // Aplicar filtros a donaciones monetarias
+  const filteredMonetaryDonations = donations.filter((d) => {
+    // Fechas
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom);
+      const donationDate = new Date(d.createdAt);
+      if (donationDate < from) return false;
+    }
+
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo);
+      const donationDate = new Date(d.createdAt);
+      // incluir el día completo
+      to.setHours(23, 59, 59, 999);
+      if (donationDate > to) return false;
+    }
+
+    // Método de pago
+    if (filters.method !== 'all' && d.paymentMethod !== filters.method) {
+      return false;
+    }
+
+    // Programa / destino
+    if (filters.program !== 'all') {
+      const dest = d.destination || 'General';
+      if (dest !== filters.program) return false;
+    }
+
+    // Estado
+    if (filters.status !== 'all' && d.status !== filters.status) {
+      return false;
+    }
+
+    return true;
+  });
+
+  // Donaciones en especie filtradas por rango de fechas
+  const filteredInKindDonations = inKindDonations.filter((d) => {
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom);
+      const donationDate = new Date(d.createdAt);
+      if (donationDate < from) return false;
+    }
+
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo);
+      const donationDate = new Date(d.createdAt);
+      to.setHours(23, 59, 59, 999);
+      if (donationDate > to) return false;
+    }
+
+    return true;
+  });
+
+  const totalMonetaryAmount = filteredMonetaryDonations
+    .filter((d) => d.donationType === 'monetaria' && d.status === 'aprobada')
+    .reduce((sum, d) => sum + d.amount, 0);
+
+  const totalInKindCount = filteredInKindDonations.length;
+
+  // Agrupar donaciones por donante para tabla y CSV
+  type DonorAggregate = {
+    name: string;
+    email: string;
+    phone?: string;
+    total: number;
+    monetaryCount: number;
+    inKindCount: number;
+    lastDonation: string;
+  };
+
+  const inKindByEmail: Record<string, number> = filteredInKindDonations.reduce((acc, d) => {
+    const email = d.donorEmail.toLowerCase();
+    acc[email] = (acc[email] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const donorAggregates: DonorAggregate[] = filteredMonetaryDonations
+    .filter((d) => d.status === 'aprobada')
+    .reduce((acc: DonorAggregate[], d) => {
+      const emailKey = d.donorEmail.toLowerCase();
+      const existing = acc.find((item) => item.email.toLowerCase() === emailKey);
+
+      if (existing) {
+        existing.total += d.amount;
+        existing.monetaryCount += 1;
+        if (new Date(d.createdAt) > new Date(existing.lastDonation)) {
+          existing.lastDonation = d.createdAt;
+        }
+      } else {
+        acc.push({
+          name: d.donorName,
+          email: d.donorEmail,
+          phone: d.donorPhone,
+          total: d.amount,
+          monetaryCount: 1,
+          inKindCount: inKindByEmail[emailKey] || 0,
+          lastDonation: d.createdAt,
+        });
+      }
+
+      return acc;
+    }, [])
+    .sort((a, b) => b.total - a.total);
+
+  const topDonors = donorAggregates.slice(0, 10);
+
   // Amount distribution
   const amountDistribution = [
     { range: '$10K-50K', value: 125, count: 15 },
@@ -74,27 +187,6 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
     { range: '$500K+', value: 180, count: 12 }
   ];
 
-  // Top donors
-  const topDonors = donations
-    .filter(d => d.status === 'aprobada')
-    .reduce((acc: any[], d) => {
-      const existing = acc.find(item => item.email === d.donorEmail);
-      if (existing) {
-        existing.total += d.amount;
-        existing.count += 1;
-      } else {
-        acc.push({
-          name: d.donorName,
-          email: d.donorEmail,
-          total: d.amount,
-          count: 1,
-          lastDonation: d.createdAt
-        });
-      }
-      return acc;
-    }, [])
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
 
   const COLORS = ['#4A9D5F', '#F59E0B', '#3B82F6', '#8B5CF6', '#EC4899'];
 
@@ -111,8 +203,59 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
     alert('Exportando reporte a PDF... (función simulada)');
   };
 
-  const handleExportExcel = () => {
-    alert('Exportando reporte a Excel... (función simulada)');
+  const handleExportCSV = () => {
+    if (donorAggregates.length === 0) {
+      alert('No hay datos para exportar con los filtros actuales.');
+      return;
+    }
+
+    const isPrivileged = isSuperAdmin;
+
+    const headers = isPrivileged
+      ? ['Nombre', 'Email', 'Teléfono', 'TotalDonadoCOP', 'DonacionesMonetarias', 'DonacionesEspecie', 'UltimaDonacion']
+      : ['Nombre', 'TotalDonadoCOP', 'DonacionesMonetarias', 'DonacionesEspecie', 'UltimaDonacion'];
+
+    const escapeCsv = (value: string | number | undefined) => {
+      const str = value == null ? '' : String(value);
+      const needsQuotes = /[",\n;]/.test(str);
+      const escaped = str.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const rows = donorAggregates.map((donor) => {
+      const baseValues = [
+        donor.name,
+        formatCurrency(donor.total),
+        donor.monetaryCount,
+        donor.inKindCount,
+        new Date(donor.lastDonation).toLocaleDateString('es-CO'),
+      ];
+
+      if (isPrivileged) {
+        return [
+          donor.name,
+          donor.email,
+          donor.phone || '',
+          formatCurrency(donor.total),
+          donor.monetaryCount,
+          donor.inKindCount,
+          new Date(donor.lastDonation).toLocaleDateString('es-CO'),
+        ].map(escapeCsv);
+      }
+
+      return baseValues.map(escapeCsv);
+    });
+
+    const csvContent = [headers.map(escapeCsv).join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'reporte_donantes.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -152,9 +295,9 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
               <Download className="w-4 h-4 mr-2" />
               Exportar PDF
             </Button>
-            <Button variant="outline" onClick={handleExportExcel}>
+            <Button variant="outline" onClick={handleExportCSV}>
               <Download className="w-4 h-4 mr-2" />
-              Exportar Excel
+              Exportar CSV
             </Button>
           </div>
         </div>
@@ -391,6 +534,16 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
           </Card>
         </div>
 
+        {/* Resumen de donaciones monetarias y en especie */}
+        <div className="mb-4 flex flex-wrap gap-4">
+          <Badge variant="secondary">
+            Total donaciones monetarias (filtrado): {formatCurrency(totalMonetaryAmount)}
+          </Badge>
+          <Badge variant="secondary">
+            Donaciones en especie (filtrado): {totalInKindCount}
+          </Badge>
+        </div>
+
         {/* Top Donors Table */}
         <Card className="mb-8">
           <CardHeader>
@@ -403,8 +556,10 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
                   <TableRow>
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Donante</TableHead>
+                    {isSuperAdmin && <TableHead>Contacto</TableHead>}
                     <TableHead>Total Donado</TableHead>
                     <TableHead># Donaciones</TableHead>
+                    <TableHead># Especie</TableHead>
                     <TableHead>Promedio</TableHead>
                     <TableHead>Última Donación</TableHead>
                   </TableRow>
@@ -423,9 +578,18 @@ export const DonationReports: React.FC<DonationReportsProps> = ({ onNavigate }) 
                         </Badge>
                       </TableCell>
                       <TableCell>{donor.name}</TableCell>
+                      {isSuperAdmin && (
+                        <TableCell>
+                          <div className="flex flex-col text-sm text-gray-600">
+                            <span>{donor.email}</span>
+                            {donor.phone && <span>{donor.phone}</span>}
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">{formatCurrency(donor.total)}</TableCell>
-                      <TableCell>{donor.count}</TableCell>
-                      <TableCell>{formatCurrency(donor.total / donor.count)}</TableCell>
+                      <TableCell>{donor.monetaryCount}</TableCell>
+                      <TableCell>{donor.inKindCount}</TableCell>
+                      <TableCell>{formatCurrency(donor.total / Math.max(donor.monetaryCount, 1))}</TableCell>
                       <TableCell>
                         {new Date(donor.lastDonation).toLocaleDateString('es-CO')}
                       </TableCell>

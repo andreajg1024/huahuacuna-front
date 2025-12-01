@@ -1,4 +1,4 @@
-import { Heart, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from 'lucide-react';
+import { Heart, Mail, Phone, MapPin, Facebook, Instagram } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (section: string) => void;
@@ -12,25 +12,37 @@ export function Footer({ onNavigate }: FooterProps) {
           {/* Foundation Info */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white fill-white" />
+              <div className="w-10 h-10 flex items-center justify-center !rounded-none">
+                <img
+                  src="/logo.png"
+                  alt="Fundación Huahuacuna"
+                  className="w-full h-full object-contain !rounded-none"
+                  style={{ borderRadius: 0 }}
+                />
               </div>
               <div className="text-white" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-                Huahuacuna
+                Fundación Huahuacuna
               </div>
             </div>
             <p className="text-sm text-gray-400 mb-4">
               Sembrando futuro en la niñez vulnerable de Armenia, Quindío.
             </p>
             <div className="flex gap-3">
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-800 hover:bg-amber-500 flex items-center justify-center transition-colors">
+              <a
+                href="https://www.facebook.com/FundacionHuahuacuna"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-amber-500 flex items-center justify-center transition-colors"
+              >
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-800 hover:bg-amber-500 flex items-center justify-center transition-colors">
+              <a
+                href="https://www.instagram.com/huahuacuna?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-gray-800 hover:bg-amber-500 flex items-center justify-center transition-colors"
+              >
                 <Instagram className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-9 h-9 rounded-full bg-gray-800 hover:bg-amber-500 flex items-center justify-center transition-colors">
-                <Twitter className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -71,17 +83,56 @@ export function Footer({ onNavigate }: FooterProps) {
           <div>
             <h3 className="text-white mb-4">Nuestros Programas</h3>
             <ul className="space-y-2 text-sm">
-              <li className="hover:text-amber-400 transition-colors cursor-pointer">
-                Apadrinamiento Integral
+              <li>
+                <button
+                  onClick={() => {
+                    onNavigate('programas');
+                    if (typeof window !== 'undefined') {
+                      setTimeout(() => {
+                        document
+                          .getElementById('programa-apadrinamiento')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 300);
+                    }
+                  }}
+                  className="hover:text-amber-400 transition-colors cursor-pointer"
+                >
+                  Apadrinamiento Integral
+                </button>
               </li>
-              <li className="hover:text-amber-400 transition-colors cursor-pointer">
-                Escuela de Música
+              <li>
+                <button
+                  onClick={() => {
+                    onNavigate('programas');
+                    if (typeof window !== 'undefined') {
+                      setTimeout(() => {
+                        document
+                          .getElementById('programas-complementarios')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 300);
+                    }
+                  }}
+                  className="hover:text-amber-400 transition-colors cursor-pointer"
+                >
+                  Programas Complementarios
+                </button>
               </li>
-              <li className="hover:text-amber-400 transition-colors cursor-pointer">
-                Escuela de Inglés
-              </li>
-              <li className="hover:text-amber-400 transition-colors cursor-pointer">
-                Ropero y Moda Circular
+              <li>
+                <button
+                  onClick={() => {
+                    onNavigate('programas');
+                    if (typeof window !== 'undefined') {
+                      setTimeout(() => {
+                        document
+                          .getElementById('ayudas-ocasionales')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 300);
+                    }
+                  }}
+                  className="hover:text-amber-400 transition-colors cursor-pointer"
+                >
+                  Ayudas Ocasionales
+                </button>
               </li>
             </ul>
           </div>

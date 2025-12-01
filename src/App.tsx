@@ -93,19 +93,6 @@ function AppContent() {
     setCurrentPage(page);
   };
 
-  // Authentication Pages
-  if (currentPage === 'login') {
-    return <LoginPage onNavigate={handleNavigate} />;
-  }
-
-  if (currentPage === 'register') {
-    return <RegisterPage onNavigate={handleNavigate} />;
-  }
-
-  if (currentPage === 'password-recovery') {
-    return <PasswordRecoveryPage onNavigate={handleNavigate} />;
-  }
-
   // Dashboard Pages (require authentication)
   if (isAuthenticated && user) {
     const renderDashboardContent = () => {
@@ -121,7 +108,7 @@ function AppContent() {
           return <PadrinoDashboard onNavigate={handleNavigate} />;
         
         case 'profile':
-          return <ProfilePage />;
+          return <ProfilePage onNavigate={handleNavigate} />;
         
         case 'admin-management':
           // Gestión de administradores / usuarios internos
@@ -252,7 +239,7 @@ function AppContent() {
     );
   }
 
-  // Public Pages
+  // Public + auth pages rendered with public layout (Header + Footer)
   const renderPublicSection = () => {
     switch (currentPage) {
       case 'home':
@@ -276,6 +263,12 @@ function AppContent() {
       case 'donar':
       case 'donaciones':
         return <PublicDonationsPage />;
+      case 'login':
+        return <LoginPage onNavigate={handleNavigate} />;
+      case 'register':
+        return <RegisterPage onNavigate={handleNavigate} />;
+      case 'password-recovery':
+        return <PasswordRecoveryPage onNavigate={handleNavigate} />;
       default:
         return <HeroSection onNavigate={handleNavigate} />;
     }

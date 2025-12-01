@@ -5,7 +5,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { 
-  ArrowLeft, Clock, Eye, Share2, Facebook, Twitter, 
+  ArrowLeft, Clock, Eye, Share2, Facebook, 
   Mail, Link as LinkIcon, Calendar, ChevronRight
 } from 'lucide-react';
 import { useNews } from '../../contexts/NewsContext';
@@ -62,9 +62,6 @@ export const NewsArticleDetail: React.FC<NewsArticleDetailProps> = ({ slug, onBa
     switch (platform) {
       case 'facebook':
         url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-        break;
-      case 'twitter':
-        url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(article.title)}`;
         break;
       case 'whatsapp':
         url = `https://wa.me/?text=${encodeURIComponent(article.title + ' ' + shareUrl)}`;
@@ -179,15 +176,6 @@ export const NewsArticleDetail: React.FC<NewsArticleDetailProps> = ({ slug, onBa
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => handleShare('twitter')}
-              className="bg-[#1DA1F2] text-white hover:bg-[#1DA1F2]/90 border-0"
-            >
-              <Twitter className="w-4 h-4 mr-1" />
-              Twitter
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
               onClick={() => handleShare('whatsapp')}
               className="bg-[#25D366] text-white hover:bg-[#25D366]/90 border-0"
             >
@@ -297,14 +285,6 @@ export const NewsArticleDetail: React.FC<NewsArticleDetailProps> = ({ slug, onBa
             >
               <Facebook className="w-4 h-4 mr-1" />
               Facebook
-            </Button>
-            <Button 
-              size="sm"
-              onClick={() => handleShare('twitter')}
-              className="bg-[#1DA1F2] hover:bg-[#1DA1F2]/90"
-            >
-              <Twitter className="w-4 h-4 mr-1" />
-              Twitter
             </Button>
             <Button 
               size="sm"
