@@ -78,38 +78,70 @@ class ApiClient {
         headers
       });
       
-      const response = await fetch(url, {
-        ...fetchConfig,
-        headers,
-      });
+      // Crear AbortController para timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+      
+      try {
+        const response = await fetch(url, {
+          ...fetchConfig,
+          headers,
+          signal: controller.signal,
+        });
 
-      // Parse response
-      let data;
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
+        clearTimeout(timeoutId);
 
-      // Handle HTTP errors
-      if (!response.ok) {
+        // Parse response
+        let data;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = await response.text();
+        }
+
+        console.log('[ApiClient] Response:', {
+          status: response.status,
+          ok: response.ok,
+          contentType,
+          data: typeof data === 'object' ? JSON.stringify(data).substring(0, 200) : data
+        });
+
+        // Handle HTTP errors
+        if (!response.ok) {
+          return {
+            success: false,
+            error: {
+              message: data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`,
+              code: data?.code || `HTTP_${response.status}`,
+              details: data,
+            },
+          };
+        }
+
         return {
-          success: false,
-          error: {
-            message: data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`,
-            code: data?.code || `HTTP_${response.status}`,
-            details: data,
-          },
+          success: true,
+          data,
         };
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.error('[ApiClient] Request timeout after 30s');
+          return {
+            success: false,
+            error: {
+              message: 'La petición tardó demasiado tiempo. El servidor puede estar procesando la solicitud.',
+              code: 'TIMEOUT',
+              details: { timeout: 30000 },
+            },
+          };
+        }
+        
+        throw fetchError;
       }
-
-      return {
-        success: true,
-        data,
-      };
     } catch (error) {
-      console.error('API Request Error:', error);
+      console.error('[ApiClient] Request Error:', error);
       return {
         success: false,
         error: {

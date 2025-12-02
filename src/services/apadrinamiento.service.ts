@@ -44,6 +44,7 @@ export class ApadrinamientoService extends BaseService {
     dto: CreateChildDTO,
     userId: number
   ): Promise<ApiResponse<ChildResponse>> {
+    const startTime = Date.now();
     console.log('[ApadrinamientoService] createChild - Start', { dto, userId });
     console.log('[ApadrinamientoService] Payload size:', JSON.stringify({ dto, userId }).length, 'bytes');
     
@@ -63,11 +64,15 @@ export class ApadrinamientoService extends BaseService {
 
     // Usar Kafka topic para crear niño
     try {
+      console.log('[ApadrinamientoService] Sending to Kafka topic:', KafkaTopic.CHILDREN_CREATE);
+      
       const response = await apiClient.sendToKafka<ChildResponse>(
         KafkaTopic.CHILDREN_CREATE,
         { dto, userId }
       );
-      console.log('[ApadrinamientoService] createChild - Response:', response);
+      
+      const duration = Date.now() - startTime;
+      console.log(`[ApadrinamientoService] createChild - Response received in ${duration}ms:`, response);
 
       // Manejo específico de códigos de error HTTP
       if (!response.success && response.error) {
