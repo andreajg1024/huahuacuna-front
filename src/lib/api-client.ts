@@ -27,7 +27,10 @@ class ApiClient {
    */
   private getAuthToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    // Intentar obtener el token de diferentes keys por compatibilidad
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+    console.log('[ApiClient] getAuthToken - Token encontrado:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+    return token;
   }
 
   /**
@@ -42,6 +45,9 @@ class ApiClient {
       const token = this.getAuthToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        console.log('[ApiClient] buildHeaders - Authorization header agregado');
+      } else {
+        console.warn('[ApiClient] buildHeaders - NO SE ENCONTRÓ TOKEN, Authorization header NO agregado');
       }
     }
 
@@ -60,12 +66,21 @@ class ApiClient {
     try {
       const url = `${this.baseUrl}${endpoint}`;
       
+      const headers = {
+        ...this.buildHeaders(requiresAuth),
+        ...fetchConfig.headers,
+      };
+
+      console.log('[ApiClient] Request:', {
+        method: fetchConfig.method || 'GET',
+        url,
+        hasAuthHeader: !!headers['Authorization'],
+        headers
+      });
+      
       const response = await fetch(url, {
         ...fetchConfig,
-        headers: {
-          ...this.buildHeaders(requiresAuth),
-          ...fetchConfig.headers,
-        },
+        headers,
       });
 
       // Parse response
