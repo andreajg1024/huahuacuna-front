@@ -45,6 +45,7 @@ export class ApadrinamientoService extends BaseService {
     userId: number
   ): Promise<ApiResponse<ChildResponse>> {
     console.log('[ApadrinamientoService] createChild - Start', { dto, userId });
+    console.log('[ApadrinamientoService] Payload size:', JSON.stringify({ dto, userId }).length, 'bytes');
     
     try {
       this.validateCreateChildDTO(dto);
@@ -60,9 +61,12 @@ export class ApadrinamientoService extends BaseService {
       };
     }
 
-    // Usar endpoint REST en lugar de Kafka
+    // Usar Kafka topic para crear niño
     try {
-      const response = await apiClient.post<ChildResponse>('/api/children', dto);
+      const response = await apiClient.sendToKafka<ChildResponse>(
+        KafkaTopic.CHILDREN_CREATE,
+        { dto, userId }
+      );
       console.log('[ApadrinamientoService] createChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP
@@ -142,8 +146,10 @@ export class ApadrinamientoService extends BaseService {
     }
     
     try {
-      const { id, ...updateData } = dto;
-      const response = await apiClient.patch<ChildResponse>(`/api/children/${id}`, updateData);
+      const response = await apiClient.sendToKafka<ChildResponse>(
+        KafkaTopic.CHILDREN_UPDATE,
+        { dto, userId }
+      );
       console.log('[ApadrinamientoService] updateChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP
@@ -233,7 +239,10 @@ export class ApadrinamientoService extends BaseService {
     }
     
     try {
-      const response = await apiClient.delete<void>(`/api/children/${childId}`);
+      const response = await apiClient.sendToKafka<void>(
+        KafkaTopic.CHILDREN_DELETE,
+        { childId, userId }
+      );
       console.log('[ApadrinamientoService] deleteChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP

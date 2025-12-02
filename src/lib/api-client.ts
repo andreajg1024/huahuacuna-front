@@ -194,6 +194,9 @@ class ApiClient {
     payload: any,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
+    console.log(`[ApiClient] sendToKafka - Topic: ${topic}`);
+    console.log('[ApiClient] sendToKafka - Payload:', payload);
+    console.log('[ApiClient] sendToKafka - Payload size:', JSON.stringify(payload).length, 'bytes');
     return this.post<T>(`/kafka/${topic}`, payload, config);
   }
 }
