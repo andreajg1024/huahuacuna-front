@@ -122,26 +122,28 @@ export const AdminDonationsManagement: React.FC<AdminDonationsManagementProps> =
 
   return (
     <div className="p-6">
+      {/* Back button */}
+      <button
+        onClick={() => onNavigate?.('super-admin')}
+        className="mb-4 text-sm text-gray-600 hover:text-amber-600 flex items-center gap-2"
+      >
+        ← Volver al panel
+      </button>
+
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <button
-            onClick={() => onNavigate?.('dashboard')}
-            className="mb-2 text-sm text-gray-600 hover:text-amber-600"
-          >
-            ← Volver al panel
-          </button>
-          <div>
-            <h1 className="text-3xl mb-2">Gestión de Donaciones</h1>
-            <p className="text-gray-600">Administra y monitorea todas las donaciones</p>
-          </div>
-          <Button onClick={handleExport} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </Button>
+          <h1 className="text-3xl mb-2">Gestión de Donaciones</h1>
+          <p className="text-gray-600">Administra y monitorea todas las donaciones</p>
         </div>
+        <Button onClick={handleExport} variant="outline">
+          <Download className="w-4 h-4 mr-2" />
+          Exportar
+        </Button>
+      </div>
 
-        {/* Stats Dashboard (RF-039) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Dashboard (RF-039) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">

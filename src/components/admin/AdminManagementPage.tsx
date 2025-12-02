@@ -12,6 +12,7 @@ import {
   UserCog,
   CheckCircle,
   XCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -58,7 +59,11 @@ interface Admin {
   creadoPor: string;
 }
 
-export function AdminManagementPage() {
+interface AdminManagementPageProps {
+  onNavigate: (page: string) => void;
+}
+
+export function AdminManagementPage({ onNavigate }: AdminManagementPageProps) {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
@@ -261,6 +266,14 @@ export function AdminManagementPage() {
 
   return (
     <div className="p-8">
+      {/* Back button */}
+      <button
+        onClick={() => onNavigate('super-admin')}
+        className="mb-4 text-sm text-gray-600 hover:text-blue-600 flex items-center gap-2"
+      >
+        ← Volver al panel
+      </button>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Gestión de Administradores</h1>

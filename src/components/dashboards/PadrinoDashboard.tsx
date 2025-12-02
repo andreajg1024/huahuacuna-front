@@ -17,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSponsorship } from '../../contexts/SponsorshipContext';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { Progress } from '../ui/progress';
+import { toast } from 'sonner';
 
 interface PadrinoDashboardProps {
   onNavigate: (page: string) => void;
@@ -49,24 +50,16 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
       onClick: () => onNavigate('profile'),
     },
     {
-      title: 'Niños Apadrinados',
+      title: 'Niño Apadrinado',
       description: 'Perfil e información de tu ahijado',
       icon: Heart,
       color: 'from-pink-400 to-pink-500',
-      badge: '1',
-      onClick: () => onNavigate('my-child'),
-    },
-    {
-      title: 'Bitácora del Niño',
-      description: 'Progreso y desarrollo académico',
-      icon: BookOpen,
-      color: 'from-amber-400 to-amber-500',
+      badge: mySponsoredChild ? '1' : undefined,
       onClick: () => {
         if (mySponsoredChild) {
-          // In a real router setup, would navigate to /bitacora/:childId
-          // For now, we'll use the navigate function
-          window.location.hash = `bitacora-${mySponsoredChild.id}`;
-          onNavigate('bitacora');
+          onNavigate('my-child');
+        } else {
+          onNavigate('catalog');
         }
       },
     },
@@ -76,7 +69,13 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
       icon: MessageCircle,
       color: 'from-blue-400 to-blue-500',
       badge: unreadMessagesCount > 0 ? unreadMessagesCount.toString() : undefined,
-      onClick: () => onNavigate('messages'),
+      onClick: () => {
+        if (mySponsoredChild) {
+          onNavigate('messages');
+        } else {
+          toast.error('Debes apadrinar un niño para acceder a los mensajes');
+        }
+      },
     },
     {
       title: 'Mis Donaciones',
@@ -95,10 +94,10 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
     },
     {
       title: 'Documentos',
-      description: 'Certificados y reportes',
+      description: 'Certificados de donación',
       icon: FileText,
       color: 'from-gray-400 to-gray-500',
-      onClick: () => onNavigate('my-donations'),
+      onClick: () => onNavigate('my-documents'),
     },
   ];
 
@@ -288,7 +287,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
           </Card>
         </div>
 
-      </div>
+      )}
 
       {/* Impact Message */}
       {mySponsoredChild && (

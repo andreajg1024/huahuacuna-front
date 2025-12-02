@@ -142,8 +142,8 @@ export const AdminVolunteerManagement: React.FC<AdminVolunteerManagementProps> =
     <div className="p-6">
       {/* Back button */}
       <button
-        onClick={() => onNavigate?.('dashboard')}
-        className="mb-4 text-sm text-gray-600 hover:text-amber-600"
+        onClick={() => onNavigate?.('super-admin')}
+        className="mb-4 text-sm text-gray-600 hover:text-amber-600 flex items-center gap-2"
       >
         ← Volver al panel
       </button>

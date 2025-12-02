@@ -43,7 +43,7 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       description: 'Crear, aprobar y administrar padrinos y usuarios',
       icon: Users,
       color: 'from-blue-400 to-blue-500',
-      onClick: () => onNavigate('admin-management'),
+      onClick: () => onNavigate('user-management'),
     },
     {
       title: 'Gestión de Administradores',
@@ -81,7 +81,7 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       onClick: () => onNavigate('project-management'),
     },
     {
-      title: 'Solicitudes de Voluntarios',
+      title: 'Gestión de Voluntarios',
       description: 'Revisar y aprobar voluntarios',
       icon: Users,
       color: 'from-cyan-400 to-cyan-500',
@@ -93,34 +93,6 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       icon: DollarSign,
       color: 'from-pink-400 to-pink-500',
       onClick: () => onNavigate('donations-management'),
-    },
-    {
-      title: 'Panel de Control',
-      description: 'Dashboard con KPIs en tiempo real',
-      icon: TrendingUp,
-      color: 'from-cyan-400 to-cyan-500',
-      onClick: () => onNavigate('admin-dashboard'),
-    },
-    {
-      title: 'Reportes de Apadrinamiento',
-      description: 'Análisis del programa de apadrinamiento',
-      icon: BarChart3,
-      color: 'from-teal-400 to-teal-500',
-      onClick: () => onNavigate('sponsorship-reports'),
-    },
-    {
-      title: 'Reportes de Donaciones',
-      description: 'Análisis financiero de donaciones',
-      icon: PieChart,
-      color: 'from-lime-400 to-lime-500',
-      onClick: () => onNavigate('donation-reports'),
-    },
-    {
-      title: 'Configuración del Sistema',
-      description: 'Parámetros y ajustes generales',
-      icon: Settings,
-      color: 'from-gray-400 to-gray-500',
-      onClick: () => onNavigate('system-settings'),
     },
   ];
 

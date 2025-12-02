@@ -229,7 +229,42 @@ class ApiClient {
     console.log(`[ApiClient] sendToKafka - Topic: ${topic}`);
     console.log('[ApiClient] sendToKafka - Payload:', payload);
     console.log('[ApiClient] sendToKafka - Payload size:', JSON.stringify(payload).length, 'bytes');
-    return this.post<T>(`/kafka/${topic}`, payload, config);
+    
+    const response = await this.post<T>(`/kafka/${topic}`, payload, config);
+    
+    // Si hay error, enviarlo al backend para logging
+    if (!response.success && response.error) {
+      this.logErrorToBackend({
+        topic,
+        payload,
+        error: response.error,
+        timestamp: new Date().toISOString(),
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      }).catch(err => {
+        console.error('[ApiClient] Failed to log error to backend:', err);
+      });
+    }
+    
+    return response;
+  }
+
+  /**
+   * Log frontend errors to backend for monitoring
+   */
+  private async logErrorToBackend(errorData: {
+    topic: string;
+    payload: any;
+    error: any;
+    timestamp: string;
+    userAgent: string;
+  }): Promise<void> {
+    try {
+      // Enviar error al endpoint de logging del backend
+      await this.post('/api/logs/frontend-error', errorData, { requiresAuth: false });
+    } catch (error) {
+      // Silently fail - no queremos crear un loop infinito de errores
+      console.error('[ApiClient] Error logging to backend:', error);
+    }
   }
 }
 
