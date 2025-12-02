@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from '../layouts/DashboardLayout';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
@@ -50,7 +49,11 @@ const STATUS_CONFIG = {
   inactivo: { label: 'Inactivo', color: 'bg-gray-100 text-gray-800', icon: XCircle }
 };
 
-export const AdminVolunteerManagement: React.FC = () => {
+interface AdminVolunteerManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const AdminVolunteerManagement: React.FC<AdminVolunteerManagementProps> = ({ onNavigate }) => {
   const { applications, deleteApplication } = useVolunteering();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTab, setCurrentTab] = useState<'all' | VolunteerStatus>('all');
@@ -139,10 +142,17 @@ export const AdminVolunteerManagement: React.FC = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+    <div className="p-6">
+      {/* Back button */}
+      <button
+        onClick={() => onNavigate?.('dashboard')}
+        className="mb-4 text-sm text-gray-600 hover:text-amber-600"
+      >
+        ← Volver al panel
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl mb-2">Gestión de Voluntarios</h1>
             <p className="text-gray-600">Administra las solicitudes de voluntariado</p>
@@ -455,7 +465,7 @@ export const AdminVolunteerManagement: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

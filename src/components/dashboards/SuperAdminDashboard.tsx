@@ -40,14 +40,14 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
   const modules = [
     {
       title: 'Gestión de Usuarios',
-      description: 'Administrar padrinos y usuarios del sistema',
+      description: 'Crear, aprobar y administrar padrinos y usuarios',
       icon: Users,
       color: 'from-blue-400 to-blue-500',
       onClick: () => onNavigate('admin-management'),
     },
     {
       title: 'Gestión de Administradores',
-      description: 'Crear y gestionar cuentas de administradores',
+      description: 'Crear y gestionar cuentas de administradores internos',
       icon: UserCog,
       color: 'from-indigo-400 to-indigo-500',
       onClick: () => onNavigate('admin-management'),
@@ -65,13 +65,6 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       icon: HandHeart,
       color: 'from-green-400 to-green-500',
       onClick: () => onNavigate('catalog'),
-    },
-    {
-      title: 'Bitácoras',
-      description: 'Registros de progreso y desarrollo',
-      icon: BookOpen,
-      color: 'from-amber-400 to-amber-500',
-      onClick: () => onNavigate('bitacora'),
     },
     {
       title: 'Eventos',
@@ -123,13 +116,6 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
       onClick: () => onNavigate('donation-reports'),
     },
     {
-      title: 'Reportes y Estadísticas',
-      description: 'Análisis y métricas del sistema',
-      icon: BarChart3,
-      color: 'from-orange-400 to-orange-500',
-      onClick: () => onNavigate('admin-dashboard'),
-    },
-    {
       title: 'Configuración del Sistema',
       description: 'Parámetros y ajustes generales',
       icon: Settings,
@@ -138,8 +124,9 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
     },
   ];
 
-  const recentActivity = [
-    { action: 'Nuevo padrino registrado', user: 'Ana María López', time: 'Hace 15 min' },
+  return (
+    <div className="p-8">
+      {/* Welcome Header */}
     { action: 'Bitácora actualizada', user: 'Carlos Admin', time: 'Hace 1 hora' },
     { action: 'Evento creado', user: 'María González', time: 'Hace 2 horas' },
     { action: 'Donación recibida', user: 'Juan Pérez', time: 'Hace 3 horas' },
@@ -202,44 +189,7 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
           ))}
         </div>
       </div>
-
-      {/* Recent Activity */}
-      <div>
-        <h2 className="text-gray-900 mb-6">Actividad Reciente</h2>
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div>
-                      <p className="text-gray-900">{activity.action}</p>
-                      <p className="text-sm text-gray-500">por {activity.user}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">{activity.time}</span>
-                </div>
-              ))}
-            </div>
-            <Button 
-              variant="ghost" 
-              className="w-full mt-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              onClick={() => onNavigate('admin-dashboard')}
-            >
-              Ver Toda la Actividad
-              <FileText className="w-4 h-4 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
-
-// Import Button at the top (add this to imports)
-import { Button } from '../ui/button';
 

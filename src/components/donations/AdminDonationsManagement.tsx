@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from '../layouts/DashboardLayout';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
@@ -24,7 +23,11 @@ import { useDonations, type DonationStatus } from '../../contexts/DonationsConte
 // tipo de estado y exportación a CSV; se apoya completamente en DonationsContext
 // para consultar y resumir el listado de donaciones en memoria.
 
-export const AdminDonationsManagement: React.FC = () => {
+interface AdminDonationsManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const AdminDonationsManagement: React.FC<AdminDonationsManagementProps> = ({ onNavigate }) => {
   const { donations, getDonationCount, getTotalDonated, getDonationsByStatus } = useDonations();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTab, setCurrentTab] = useState<'all' | DonationStatus>('all');
@@ -118,9 +121,15 @@ export const AdminDonationsManagement: React.FC = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <button
+            onClick={() => onNavigate?.('dashboard')}
+            className="mb-2 text-sm text-gray-600 hover:text-amber-600"
+          >
+            ← Volver al panel
+          </button>
           <div>
             <h1 className="text-3xl mb-2">Gestión de Donaciones</h1>
             <p className="text-gray-600">Administra y monitorea todas las donaciones</p>
@@ -286,7 +295,7 @@ export const AdminDonationsManagement: React.FC = () => {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

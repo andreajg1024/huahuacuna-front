@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from '../layouts/DashboardLayout';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
@@ -19,7 +18,11 @@ import { useAuth } from '../../contexts/AuthContext';
 // filtros por fecha y buscador por transacción, además de la tabla con cada
 // donación y accesos simulados a recibos y certificados tributarios.
 
-export const DonorDashboard: React.FC = () => {
+interface DonorDashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const DonorDashboard: React.FC<DonorDashboardProps> = ({ onNavigate }) => {
   const { user } = useAuth();
   const { getDonationsByDonor, getTotalDonated, needsCertificate } = useDonations();
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,9 +104,14 @@ export const DonorDashboard: React.FC = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="p-6">
-        <div className="mb-6">
+    <div className="p-6">
+      <button
+        onClick={() => onNavigate?.('dashboard')}
+        className="mb-4 text-sm text-gray-600 hover:text-amber-600"
+      >
+        ← Volver al panel
+      </button>
+      <div className="mb-6">
           <h1 className="text-3xl mb-2">Mis Donaciones</h1>
           <p className="text-gray-600">Gracias por tu generosidad</p>
         </div>
@@ -295,7 +303,7 @@ export const DonorDashboard: React.FC = () => {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 

@@ -75,7 +75,7 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
       description: 'Chat con coordinadores',
       icon: MessageCircle,
       color: 'from-blue-400 to-blue-500',
-      badge: '3',
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount.toString() : undefined,
       onClick: () => onNavigate('messages'),
     },
     {
@@ -288,33 +288,6 @@ export function PadrinoDashboard({ onNavigate }: PadrinoDashboardProps) {
           </Card>
         </div>
 
-        {/* Recent Updates */}
-        <div>
-          <h2 className="text-gray-900 mb-6">Actualizaciones Recientes</h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {recentUpdates.map((update, index) => (
-                  <div key={index} className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-2"></div>
-                    <div className="flex-1">
-                      <h4 className="text-gray-900 mb-1">{update.title}</h4>
-                      <p className="text-sm text-gray-500">{update.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button 
-                variant="ghost" 
-                className="w-full mt-4 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                onClick={() => onNavigate('bitacora')}
-              >
-                Ver Todas las Actualizaciones
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Impact Message */}
