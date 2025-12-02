@@ -1,18 +1,26 @@
 /**
  * LoginPage Component - Ejemplo Completo
  * 
- * Componente de ejemplo que demuestra el uso completo del sistema de autenticación
- * con useAuthV2 hook
+ * Componente de ejemplo integrado con el servicio de autenticación real
+ * Implementa el endpoint POST /auth/login según especificación del backend
  * 
  * Features:
- * - Validación de formulario
+ * - Validación básica de formulario
  * - Manejo de estados de carga
- * - Manejo de errores
+ * - Manejo completo de errores del backend
  * - Redirección según rol
- * - Persistencia de sesión
+ * - Logging para debugging
+ * 
+ * Backend Endpoint: POST /auth/login
+ * Request: { email: string, password: string }
+ * Response (200): { accessToken, refreshToken, user }
+ * Errores:
+ * - 401: Credenciales inválidas
+ * - 403: Cuenta bloqueada/inactiva/no verificada
+ * - 503: Microservicio no responde
  */
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/router';
 import { useAuthV2 } from '@/hooks';
 
@@ -30,22 +38,21 @@ export default function LoginPageExample() {
     password?: string;
   }>({});
 
-  const [rememberMe, setRememberMe] = useState(false);
-
   /**
-   * Validar formulario antes de enviar
+   * Validar formulario antes de enviar (validación básica del frontend)
+   * El backend hace la validación completa
    */
   const validateForm = (): boolean => {
     const errors: any = {};
 
-    // Validar email
+    // Validar email básico
     if (!formData.email) {
       errors.email = 'El email es requerido';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Email inválido';
+      errors.email = 'Formato de email inválido';
     }
 
-    // Validar password
+    // Validar password básico
     if (!formData.password) {
       errors.password = 'La contraseña es requerida';
     } else if (formData.password.length < 8) {
@@ -63,10 +70,15 @@ export default function LoginPageExample() {
     e.preventDefault();
     clearError();
 
+    console.log('\n🔵 [LOGIN] Iniciando proceso de login...');
+
     // Validar
     if (!validateForm()) {
+      console.warn('⚠️  [LOGIN] Validación de formulario falló');
       return;
     }
+
+    console.log('📤 [LOGIN] Enviando credenciales al backend...');
 
     // Intentar login
     const result = await login({
@@ -76,18 +88,21 @@ export default function LoginPageExample() {
 
     if (result) {
       // Login exitoso
-      console.log('✅ Login exitoso:', result.user);
-
-      // Guardar información del usuario si se marcó "Recordarme"
-      if (rememberMe) {
-        localStorage.setItem('user_email', formData.email);
-      }
-
-      // Guardar usuario en localStorage para acceso rápido
-      localStorage.setItem('user', JSON.stringify(result.user));
+      console.log('✅ [LOGIN] Login exitoso');
+      console.log('👤 [LOGIN] Usuario:', {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        role: result.user.role,
+        status: result.user.status,
+        emailVerified: result.user.emailVerified,
+      });
+      console.log('🔑 [LOGIN] Tokens almacenados en localStorage');
 
       // Redirigir según el rol del usuario
       redirectByRole(result.user.role);
+    } else {
+      console.error('❌ [LOGIN] Login falló - verificar logs del servicio');
     }
   };
 
@@ -95,6 +110,8 @@ export default function LoginPageExample() {
    * Redirigir según el rol del usuario
    */
   const redirectByRole = (role: string) => {
+    console.log(`🔀 [LOGIN] Redirigiendo usuario con rol: ${role}`);
+    
     switch (role) {
       case 'SUPER_ADMIN':
         router.push('/admin/super-dashboard');
@@ -111,21 +128,56 @@ export default function LoginPageExample() {
   };
 
   /**
-   * Obtener mensaje de error amigable
+   * Obtener mensaje de error amigable según código de error del backend
    */
   const getErrorMessage = () => {
     if (!error) return null;
 
+    console.error('🔴 [LOGIN ERROR]', {
+      statusCode: error.statusCode,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
+
+    // Mapear errores según especificación del backend
     switch (error.statusCode) {
       case 401:
         return 'Email o contraseña incorrectos. Por favor verifica tus credenciales.';
       case 403:
-        return 'Tu cuenta está bloqueada, inactiva o no verificada. Contacta al administrador.';
+        if (error.message?.includes('verificada')) {
+          return 'Tu cuenta no ha sido verificada. Por favor revisa tu email para verificar tu cuenta.';
+        }
+        if (error.message?.includes('bloqueada') || error.message?.includes('SUSPENDED')) {
+          return 'Tu cuenta está bloqueada. Contacta al administrador.';
+        }
+        if (error.message?.includes('inactiva') || error.message?.includes('INACTIVE')) {
+          return 'Tu cuenta está inactiva. Contacta al administrador.';
+        }
+        return 'Tu cuenta no tiene permisos para acceder. Contacta al administrador.';
       case 503:
-        return 'El servicio no está disponible en este momento. Intenta más tarde.';
+        return 'El servicio de autenticación no está disponible en este momento. Por favor intenta más tarde.';
+      case 400:
+        return 'Los datos enviados no son válidos. Por favor verifica tu información.';
       default:
-        return error.message || 'Ha ocurrido un error al iniciar sesión.';
+        return error.message || 'Ha ocurrido un error al iniciar sesión. Por favor intenta nuevamente.';
     }
+  };
+
+  /**
+   * Manejar cambio en el email
+   */
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, email: e.target.value });
+    setValidationErrors({ ...validationErrors, email: undefined });
+  };
+
+  /**
+   * Manejar cambio en el password
+   */
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, password: e.target.value });
+    setValidationErrors({ ...validationErrors, password: undefined });
   };
 
   return (
@@ -185,10 +237,7 @@ export default function LoginPageExample() {
                 autoComplete="email"
                 required
                 value={formData.email}
-                onChange={(e) => {
-                  setFormData({ ...formData, email: e.target.value });
-                  setValidationErrors({ ...validationErrors, email: undefined });
-                }}
+                onChange={handleEmailChange}
                 className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
                   validationErrors.email ? 'border-red-300' : 'border-gray-300'
                 } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
@@ -212,10 +261,7 @@ export default function LoginPageExample() {
                 autoComplete="current-password"
                 required
                 value={formData.password}
-                onChange={(e) => {
-                  setFormData({ ...formData, password: e.target.value });
-                  setValidationErrors({ ...validationErrors, password: undefined });
-                }}
+                onChange={handlePasswordChange}
                 className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
                   validationErrors.password ? 'border-red-300' : 'border-gray-300'
                 } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm`}
@@ -228,23 +274,8 @@ export default function LoginPageExample() {
             </div>
           </div>
 
-          {/* Remember me & Forgot password */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                disabled={loading}
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Recordarme
-              </label>
-            </div>
-
+          {/* Forgot password link */}
+          <div className="flex items-center justify-end">
             <div className="text-sm">
               <a
                 href="/auth/password-recovery"

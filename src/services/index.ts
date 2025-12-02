@@ -16,6 +16,8 @@ export * from './volunteering.service';
 export * from './bitacora.service';
 export * from './activity-logs.service';
 export * from './chat.service';
+export * from './children.service';
+export * from './events.service';
 
 // Base
 export * from './base.service';

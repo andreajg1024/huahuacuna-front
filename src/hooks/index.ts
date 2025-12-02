@@ -21,3 +21,11 @@ export * from './useActivityLogs';
 // Bitacora & Chat
 export * from './useBitacoraEntries';
 export * from './useChat';
+
+// Events & Donations
+export * from './useEvents';
+export * from './useDonations';
+
+// News & Volunteering
+export * from './useNews';
+export * from './useVolunteering';

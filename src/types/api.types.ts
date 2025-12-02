@@ -956,3 +956,596 @@ export interface DeleteProjectDTO {
   projectId: number;
   userId: number;
 }
+
+// ============================================================================
+// EVENTS MODULE - 11 Endpoints
+// ============================================================================
+
+// Event Status
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
+// 1. POST /events - Crear evento
+export interface CreateEventDTO {
+  title: string;
+  description: string;
+  eventDate: string;
+  location: string;
+  capacity: number;
+  coverImage?: string;
+  images?: string[];
+  metaDescription?: string;
+  metaKeywords?: string[];
+  createdBy: number;
+}
+
+export interface EventResponse {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string;
+  eventDate: string;
+  location?: string;
+  capacity: number;
+  status: EventStatus;
+  coverImage?: string;
+  images?: string[];
+  metaDescription?: string;
+  metaKeywords?: string[];
+  registrationCount?: number;
+  viewCount?: number;
+  availableSpots?: number;
+  createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+}
+
+// 2. PUT /events/:id - Actualizar evento
+export interface UpdateEventDTO {
+  title?: string;
+  description?: string;
+  eventDate?: string;
+  location?: string;
+  capacity?: number;
+  coverImage?: string;
+  images?: string[];
+  status?: EventStatus;
+  metaDescription?: string;
+  metaKeywords?: string[];
+  updatedBy: number;
+}
+
+// 3. POST /events/:id/publish - Publicar evento
+export interface PublishEventResponse {
+  id: number;
+  status: EventStatus;
+  publishedAt: string;
+}
+
+// 4. DELETE /events/:id - Eliminar evento
+export interface DeleteEventResponse {
+  message: string;
+}
+
+// 5. GET /events/admin/all - Obtener todos los eventos (Admin)
+export interface GetEventsQueryDTO {
+  status?: EventStatus;
+  skip?: number;
+  take?: number;
+  orderBy?: 'createdAt' | 'publishedAt' | 'eventDate' | 'viewCount';
+  orderDirection?: 'asc' | 'desc';
+}
+
+export interface AdminEventsListResponse {
+  data: EventResponse[];
+  total: number;
+  skip: number;
+  take: number;
+}
+
+// 6. GET /events/published - Obtener eventos publicados (Público)
+export interface GetPublishedEventsQueryDTO {
+  skip?: number;
+  take?: number;
+  orderBy?: 'publishedAt' | 'eventDate' | 'viewCount';
+  orderDirection?: 'asc' | 'desc';
+  searchTerm?: string;
+  isUpcoming?: boolean;
+}
+
+export interface PublishedEventsListResponse {
+  data: EventResponse[];
+  total: number;
+}
+
+// 7. GET /events/:slug - Obtener detalle de evento (Público)
+// Usa EventResponse
+
+// 8. POST /events/register - Inscribirse a evento
+export interface RegisterToEventDTO {
+  eventId: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  numberOfCompanions?: number;
+  message?: string;
+}
+
+export interface EventRegistrationResponse {
+  id: number;
+  eventId: number;
+  fullName: string;
+  email: string;
+  numberOfCompanions?: number;
+  registeredAt: string;
+  confirmationCode: string;
+}
+
+// 9. GET /events/:id/registrations - Obtener inscritos (Admin)
+export interface GetRegistrationsQueryDTO {
+  eventId: number;
+  checkedIn?: boolean;
+  skip?: number;
+  take?: number;
+  orderBy?: 'registeredAt' | 'fullName';
+  orderDirection?: 'asc' | 'desc';
+}
+
+export interface EventRegistration {
+  id: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  numberOfCompanions?: number;
+  checkedIn: boolean;
+  registeredAt: string;
+  checkedInAt?: string;
+}
+
+export interface EventRegistrationsListResponse {
+  data: EventRegistration[];
+  total: number;
+  checkedInCount: number;
+}
+
+// 10. POST /events/registrations/:id/check-in - Check-in (Admin)
+export interface CheckInDTO {
+  checkedInBy: number;
+}
+
+export interface CheckInResponse {
+  id: number;
+  checkedIn: boolean;
+  checkedInAt: string;
+  checkedInBy: number;
+}
+
+// 11. GET /events/:id/statistics - Estadísticas (Admin)
+export interface EventStatisticsResponse {
+  eventId: number;
+  totalRegistrations: number;
+  totalCompanions: number;
+  totalAttendees: number;
+  checkedInCount: number;
+  capacity: number;
+  availableSpots: number;
+  viewCount: number;
+}
+
+// ============================================================================
+// CHAT MODULE - 6 Endpoints
+// ============================================================================
+
+export type SenderRole = 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN';
+
+// 1. POST /chat/conversations - Crear conversación
+export interface CreateConversationDTO {
+  sponsorshipId: number;
+}
+
+export interface ConversationResponse {
+  id: number;
+  sponsorshipId: number;
+  padrinoId: number;
+  childName: string;
+  padrinoName?: string;
+  createdAt: string;
+  lastMessageAt?: string;
+  lastMessage?: {
+    content: string;
+    sentAt: string;
+    senderRole: SenderRole;
+  };
+  unreadCount?: number;
+}
+
+// 2. GET /chat/conversations - Obtener mis conversaciones
+export interface PaginationDTO {
+  page?: number;
+  limit?: number;
+}
+
+export interface ConversationsListResponse {
+  data: ConversationResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// 3. GET /chat/conversations/:conversationId/messages - Obtener mensajes
+export interface ChatMessage {
+  id: number;
+  conversationId: number;
+  content: string;
+  senderId: number;
+  senderRole: SenderRole;
+  senderName: string;
+  sentAt: string;
+  deliveredAt?: string;
+  readAt?: string;
+}
+
+export interface MessagesListResponse {
+  data: ChatMessage[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// 4. POST /chat/messages - Enviar mensaje
+export interface SendMessageDTO {
+  conversationId: number;
+  content: string;
+}
+
+export interface SendMessageResponse {
+  id: number;
+  conversationId: number;
+  content: string;
+  senderId: number;
+  senderRole: SenderRole;
+  sentAt: string;
+}
+
+// 5. POST /chat/conversations/:conversationId/read - Marcar como leído
+export interface MarkAsReadResponse {
+  conversationId: number;
+  messagesMarkedAsRead: number;
+  message: string;
+}
+
+// 6. GET /chat/unread-count - Conteo de no leídos
+export interface UnreadCountResponse {
+  unreadCount: number;
+  conversationsWithUnread: number;
+}
+
+// ============================================================================
+// CHILDREN MODULE - 7 Endpoints
+// ============================================================================
+
+export type Gender = 'MALE' | 'FEMALE';
+export type ChildStatus = 'AVAILABLE' | 'PENDING' | 'SPONSORED';
+
+// 1. POST /children - Crear niño
+export interface CreateChildDTO {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: Gender;
+  ethnicity?: string;
+  specialCondition?: string;
+  municipality: string;
+  address?: string;
+  photo?: string;
+  photos?: string[];
+  shortDescription?: string;
+  fullStory?: string;
+  needs?: string[];
+}
+
+export interface ChildResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  age: number;
+  gender: Gender;
+  ethnicity?: string;
+  specialCondition?: string;
+  municipality: string;
+  address?: string;
+  photo?: string;
+  photos?: string[];
+  shortDescription?: string;
+  fullStory?: string;
+  needs?: string[];
+  status: ChildStatus;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// 2. GET /children/available - Niños disponibles (Público)
+export interface AvailableChildrenResponse {
+  data: ChildResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// 3. GET /children/filter - Filtrar niños
+export interface FilterChildrenDTO {
+  gender?: Gender;
+  minAge?: number;
+  maxAge?: number;
+  municipality?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FilteredChildrenResponse {
+  data: ChildResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  filters: {
+    gender?: Gender;
+    minAge?: number;
+    maxAge?: number;
+    municipality?: string;
+  };
+}
+
+// 4. GET /children - Todos los niños (Admin)
+export interface AllChildrenResponse {
+  data: ChildResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// 5. GET /children/:id - Detalle de niño
+// Usa ChildResponse
+
+// 6. PATCH /children/:id - Actualizar niño
+export interface UpdateChildDTO {
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  ethnicity?: string;
+  specialCondition?: string;
+  municipality?: string;
+  address?: string;
+  photo?: string;
+  photos?: string[];
+  shortDescription?: string;
+  fullStory?: string;
+  needs?: string[];
+}
+
+// 7. DELETE /children/:id - Eliminar niño
+// Retorna 204 No Content
+
+// ============================================================================
+// DONATIONS MODULE - 12 Endpoints
+// ============================================================================
+
+export type DonationType = 'MONETARY' | 'IN_KIND';
+export type DonationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type DocumentType = 'CC' | 'CE' | 'NIT' | 'TI' | 'PP';
+
+// 1. POST /donations/monetary - Donación monetaria (PSE)
+export interface CreateMonetaryDonationDTO {
+  amount: number;
+  donorName: string;
+  donorEmail: string;
+  donorPhone: string;
+  donorDocumentType: DocumentType;
+  donorDocument: string;
+  donorUserId?: number;
+  projectId?: number;
+  projectName?: string;
+  message?: string;
+  isAnonymous?: boolean;
+}
+
+export interface MonetaryDonationResponse {
+  id: number;
+  type: DonationType;
+  amount: number;
+  donorName: string;
+  donorEmail: string;
+  status: DonationStatus;
+  transactionId: string;
+  paymentUrl: string;
+  createdAt: string;
+}
+
+// 2. POST /donations/in-kind - Donación en especie
+export interface CreateInKindDonationDTO {
+  donorName: string;
+  donorEmail: string;
+  donorPhone: string;
+  description: string;
+  estimatedValue?: number;
+  message?: string;
+}
+
+export interface InKindDonationResponse {
+  id: number;
+  type: DonationType;
+  donorName: string;
+  donorEmail: string;
+  description: string;
+  estimatedValue?: number;
+  status: DonationStatus;
+  createdAt: string;
+}
+
+// 3. GET /donations/admin/all - Todas las donaciones (Admin)
+export interface GetDonationsQueryDTO {
+  type?: DonationType;
+  status?: DonationStatus;
+  skip?: number;
+  take?: number;
+}
+
+export interface DonationListItem {
+  id: number;
+  type: DonationType;
+  amount?: number;
+  donorName: string;
+  description?: string;
+  status: DonationStatus;
+  createdAt: string;
+  projectName?: string;
+  message?: string;
+}
+
+export interface AllDonationsResponse {
+  data: DonationListItem[];
+  total: number;
+  skip: number;
+  take: number;
+}
+
+// 4. GET /donations/my-donations - Mis donaciones
+export interface MyDonationsResponse {
+  data: DonationListItem[];
+  total: number;
+}
+
+// 5. POST /donations/:id/approve - Aprobar donación
+export interface ApproveDonationResponse {
+  id: number;
+  status: DonationStatus;
+  approvedAt: string;
+  approvedBy: number;
+  message: string;
+}
+
+// 6. GET /donations/info - Información pública
+export interface DonationInfoResponse {
+  id: number;
+  title: string;
+  description: string;
+  importance: string;
+  destination: string;
+  modalities: string;
+  ctaTitle: string;
+  ctaDescription: string;
+  ctaButtonText: string;
+  neededItems: string[];
+  contactAddress: string;
+  contactPhone: string;
+  contactEmail: string;
+  scheduleInfo: string;
+  statistics: {
+    totalDonations: number;
+    totalDonors: number;
+    childrenBenefited: number;
+  };
+}
+
+// 7. POST /donations/admin/info - Crear información
+export interface CreateDonationInfoDTO {
+  title: string;
+  description: string;
+  importance: string;
+  destination: string;
+  modalities: string;
+  ctaTitle: string;
+  ctaDescription: string;
+  ctaButtonText: string;
+  neededItems: string[];
+  contactAddress: string;
+  contactPhone: string;
+  contactEmail: string;
+  scheduleInfo: string;
+}
+
+export interface CreateDonationInfoResponse {
+  id: number;
+  title: string;
+  createdBy: number;
+  createdAt: string;
+}
+
+// 8. PUT /donations/admin/info/:id - Actualizar información
+export interface UpdateDonationInfoDTO {
+  title?: string;
+  description?: string;
+  importance?: string;
+  destination?: string;
+  modalities?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+  ctaButtonText?: string;
+  neededItems?: string[];
+  contactAddress?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  scheduleInfo?: string;
+}
+
+export interface UpdateDonationInfoResponse {
+  id: number;
+  title?: string;
+  ctaButtonText?: string;
+  updatedAt: string;
+}
+
+// 9. GET /donations/testimonials - Testimonios publicados (Público)
+export interface Testimonial {
+  id: number;
+  donorName: string;
+  testimonial: string;
+  avatar?: string;
+  isPublished: boolean;
+  createdAt: string;
+}
+
+export interface TestimonialsResponse {
+  data: Testimonial[];
+  total: number;
+}
+
+// 10. GET /donations/admin/testimonials - Todos los testimonios (Admin)
+export interface AllTestimonialsResponse {
+  data: Testimonial[];
+  total: number;
+  skip: number;
+  take: number;
+}
+
+// 11. POST /donations/admin/testimonials - Crear testimonio
+export interface CreateTestimonialDTO {
+  donorName: string;
+  testimonial: string;
+  avatar?: string;
+  isPublished?: boolean;
+}
+
+export interface CreateTestimonialResponse {
+  id: number;
+  donorName: string;
+  testimonial: string;
+  isPublished: boolean;
+  createdBy: number;
+  createdAt: string;
+}
+
+// 12. PUT /donations/admin/testimonials/:id - Actualizar testimonio
+export interface UpdateTestimonialDTO {
+  donorName?: string;
+  testimonial?: string;
+  avatar?: string;
+  isPublished?: boolean;
+}
+
+export interface UpdateTestimonialResponse {
+  id: number;
+  isPublished?: boolean;
+  updatedAt: string;
+}
