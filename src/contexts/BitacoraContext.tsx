@@ -291,33 +291,54 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
 
   const addChild = async (childData: Omit<Child, 'id' | 'fechaCreacion'>): Promise<Child> => {
     try {
-      // Convertir datos al formato de la API
-      const dto = apadrinamientoService.convertToApiFormat(childData);
+      console.log('[BitacoraContext] addChild - Datos recibidos:', childData);
       
-      // Obtener userId del usuario autenticado
-      const userId = user?.id ? parseInt(user.id, 10) : 0;
+      // Convertir datos del formulario al formato de la API si es necesario
+      // El formulario ya debería enviar en el formato correcto (CreateChildDTO)
+      const dto = childData as any; // Ya viene en formato correcto desde ChildFormPage
       
-      if (!userId) {
-        throw new Error('Usuario no autenticado');
-      }
+      console.log('[BitacoraContext] addChild - Enviando a API:', dto);
 
-      // Llamar al servicio de la API
-      const response = await apadrinamientoService.createChild(dto, userId);
+      // Llamar al servicio de la API (sin userId, ya se maneja en el servicio con el token)
+      const response = await apadrinamientoService.createChild(dto, 0);
       
       if (!response.success || !response.data) {
+        console.error('[BitacoraContext] addChild - Error de API:', response.error);
         throw new Error(response.error?.message || 'Error al crear el niño');
       }
 
-      // Convertir respuesta de la API al formato local
-      const newChild = apadrinamientoService.convertFromApiFormat(response.data);
+      console.log('[BitacoraContext] addChild - Respuesta de API:', response.data);
+
+      // Convertir respuesta de la API al formato local para el estado
+      const newChild: Child = {
+        id: response.data.id.toString(),
+        nombre: response.data.firstName,
+        apellidos: response.data.lastName,
+        edad: new Date().getFullYear() - new Date(response.data.dateOfBirth).getFullYear(),
+        fechaNacimiento: response.data.dateOfBirth,
+        genero: response.data.gender === 'MALE' ? 'masculino' : 'femenino',
+        municipio: response.data.municipality,
+        direccion: response.data.address || '',
+        institucion: '',
+        grado: '',
+        jornada: 'mañana',
+        foto: response.data.photo || '',
+        historia: response.data.fullStory,
+        suenos: '',
+        situacionFamiliar: '',
+        necesidades: response.data.needs || [],
+        estadoApadrinamiento: 'disponible',
+        fechaCreacion: new Date().toISOString(),
+      };
       
       // Actualizar estado local
       setChildrenList((prev) => [...prev, newChild]);
       
+      console.log('[BitacoraContext] addChild - Niño agregado al estado local:', newChild);
       toast.success('Niño registrado exitosamente');
       return newChild;
     } catch (error) {
-      console.error('Error creating child:', error);
+      console.error('[BitacoraContext] addChild - Error:', error);
       toast.error(error instanceof Error ? error.message : 'Error al crear el niño');
       
       // Fallback a mock para desarrollo

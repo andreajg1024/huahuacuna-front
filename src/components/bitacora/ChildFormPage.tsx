@@ -65,19 +65,18 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
-    nombre: existingChild?.nombre || '',
-    apellidos: existingChild?.apellidos || '',
-    fechaNacimiento: existingChild?.fechaNacimiento || '',
-    genero: existingChild?.genero || 'femenino',
-    municipio: existingChild?.municipio || '',
-    direccion: existingChild?.direccion || '',
-    institucion: existingChild?.institucion || '',
-    grado: existingChild?.grado || '',
-    jornada: existingChild?.jornada || 'mañana',
-    historia: existingChild?.historia || '',
-    suenos: existingChild?.suenos || '',
-    situacionFamiliar: existingChild?.situacionFamiliar || '',
-    necesidades: existingChild?.necesidades || [],
+    firstName: existingChild?.nombre || '',
+    lastName: existingChild?.apellidos || '',
+    dateOfBirth: existingChild?.fechaNacimiento || '',
+    gender: existingChild?.genero === 'masculino' ? 'MALE' : 'FEMALE',
+    municipality: existingChild?.municipio || '',
+    address: existingChild?.direccion || '',
+    photo: existingChild?.foto || '',
+    shortDescription: '',
+    fullStory: existingChild?.historia || '',
+    ethnicity: '',
+    specialCondition: '',
+    needs: existingChild?.necesidades || [] as string[],
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -91,7 +90,7 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
     return { years, months: months < 0 ? 12 + months : months };
   };
 
-  const age = calculateAge(formData.fechaNacimiento);
+  const age = calculateAge(formData.dateOfBirth);
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -113,32 +112,36 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
     }
 
     setPhotoFile(file);
+    
+    // Por ahora usar preview local, en producción subir a servidor
     const reader = new FileReader();
     reader.onloadend = () => {
       setPhotoPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+    
+    // TODO: Implementar upload a servidor de imágenes
+    // const uploadedUrl = await uploadImage(file);
+    // setFormData({ ...formData, photo: uploadedUrl });
+    toast.info('Nota: La foto se guardará como URL temporal. Implementa upload a servidor para producción.');
   };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
-    if (!formData.apellidos.trim()) newErrors.apellidos = 'Los apellidos son requeridos';
-    if (!formData.fechaNacimiento) newErrors.fechaNacimiento = 'La fecha de nacimiento es requerida';
-    if (!formData.genero) newErrors.genero = 'El género es requerido';
-    if (!formData.municipio) newErrors.municipio = 'El municipio es requerido';
-    if (!formData.direccion.trim()) newErrors.direccion = 'La dirección es requerida';
-    if (!formData.institucion.trim()) newErrors.institucion = 'La institución es requerida';
-    if (!formData.grado) newErrors.grado = 'El grado es requerido';
-
-    if (!isEditing && !photoFile) newErrors.foto = 'La foto es requerida';
+    if (!formData.firstName.trim()) newErrors.firstName = 'El nombre es requerido';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Los apellidos son requeridos';
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'La fecha de nacimiento es requerida';
+    if (!formData.gender) newErrors.gender = 'El género es requerido';
+    if (!formData.municipality) newErrors.municipality = 'El municipio es requerido';
+    if (!formData.shortDescription.trim()) newErrors.shortDescription = 'La descripción corta es requerida';
+    if (!formData.fullStory.trim()) newErrors.fullStory = 'La historia es requerida';
 
     // Validate age (5-18 years)
-    if (formData.fechaNacimiento) {
-      const ageYears = calculateAge(formData.fechaNacimiento).years;
+    if (formData.dateOfBirth) {
+      const ageYears = calculateAge(formData.dateOfBirth).years;
       if (ageYears < 5 || ageYears > 18) {
-        newErrors.fechaNacimiento = 'La edad debe estar entre 5 y 18 años';
+        newErrors.dateOfBirth = 'La edad debe estar entre 5 y 18 años';
       }
     }
 
@@ -157,13 +160,24 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
     setIsLoading(true);
 
     try {
+      // Preparar datos según el formato del backend
       const childData = {
-        ...formData,
-        edad: age.years,
-        foto: photoPreview || existingChild?.foto || '',
-        estadoApadrinamiento: existingChild?.estadoApadrinamiento || 'disponible',
-        padrinoId: existingChild?.padrinoId,
-      } as any;
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        municipality: formData.municipality,
+        shortDescription: formData.shortDescription.trim(),
+        fullStory: formData.fullStory.trim(),
+        ethnicity: formData.ethnicity?.trim() || undefined,
+        specialCondition: formData.specialCondition?.trim() || undefined,
+        address: formData.address?.trim() || undefined,
+        photo: formData.photo || 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400',
+        photos: [],
+        needs: formData.needs.length > 0 ? formData.needs : undefined,
+      };
+
+      console.log('[ChildForm] Enviando datos:', childData);
 
       if (isEditing && existingChild) {
         await updateChild(existingChild.id, childData);
@@ -178,7 +192,7 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
       }
     } catch (error) {
       toast.error('Error al guardar la información');
-      console.error(error);
+      console.error('[ChildForm] Error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -187,9 +201,9 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
   const handleNecesidadToggle = (necesidad: string) => {
     setFormData((prev) => ({
       ...prev,
-      necesidades: prev.necesidades.includes(necesidad)
-        ? prev.necesidades.filter((n) => n !== necesidad)
-        : [...prev.necesidades, necesidad],
+      needs: prev.needs.includes(necesidad)
+        ? prev.needs.filter((n) => n !== necesidad)
+        : [...prev.needs, necesidad],
     }));
   };
 
@@ -253,51 +267,51 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
             {/* Name */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="nombre">
+                <Label htmlFor="firstName">
                   Nombre <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="nombre"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className={errors.nombre ? 'border-red-500' : ''}
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  className={errors.firstName ? 'border-red-500' : ''}
                 />
-                {errors.nombre && <p className="text-sm text-red-600">{errors.nombre}</p>}
+                {errors.firstName && <p className="text-sm text-red-600">{errors.firstName}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="apellidos">
+                <Label htmlFor="lastName">
                   Apellidos <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="apellidos"
-                  value={formData.apellidos}
-                  onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
-                  className={errors.apellidos ? 'border-red-500' : ''}
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  className={errors.lastName ? 'border-red-500' : ''}
                 />
-                {errors.apellidos && <p className="text-sm text-red-600">{errors.apellidos}</p>}
+                {errors.lastName && <p className="text-sm text-red-600">{errors.lastName}</p>}
               </div>
             </div>
 
             {/* Birth Date and Gender */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="fechaNacimiento">
+                <Label htmlFor="dateOfBirth">
                   Fecha de Nacimiento <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="fechaNacimiento"
+                  id="dateOfBirth"
                   type="date"
-                  value={formData.fechaNacimiento}
-                  onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-                  className={errors.fechaNacimiento ? 'border-red-500' : ''}
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  className={errors.dateOfBirth ? 'border-red-500' : ''}
                 />
-                {formData.fechaNacimiento && (
+                {formData.dateOfBirth && (
                   <p className="text-sm text-gray-600">
                     Edad: {age.years} años, {age.months} meses
                   </p>
                 )}
-                {errors.fechaNacimiento && <p className="text-sm text-red-600">{errors.fechaNacimiento}</p>}
+                {errors.dateOfBirth && <p className="text-sm text-red-600">{errors.dateOfBirth}</p>}
               </div>
 
               <div className="space-y-2">
@@ -305,23 +319,23 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
                   Género <span className="text-red-500">*</span>
                 </Label>
                 <RadioGroup
-                  value={formData.genero}
-                  onValueChange={(value: any) => setFormData({ ...formData, genero: value })}
+                  value={formData.gender}
+                  onValueChange={(value: any) => setFormData({ ...formData, gender: value })}
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="masculino" id="masculino" />
-                    <Label htmlFor="masculino" className="cursor-pointer">
+                    <RadioGroupItem value="MALE" id="MALE" />
+                    <Label htmlFor="MALE" className="cursor-pointer">
                       Masculino
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="femenino" id="femenino" />
-                    <Label htmlFor="femenino" className="cursor-pointer">
+                    <RadioGroupItem value="FEMALE" id="FEMALE" />
+                    <Label htmlFor="FEMALE" className="cursor-pointer">
                       Femenino
                     </Label>
                   </div>
                 </RadioGroup>
-                {errors.genero && <p className="text-sm text-red-600">{errors.genero}</p>}
+                {errors.gender && <p className="text-sm text-red-600">{errors.gender}</p>}
               </div>
             </div>
           </CardContent>
@@ -340,11 +354,11 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="municipio">
+                <Label htmlFor="municipality">
                   Municipio <span className="text-red-500">*</span>
                 </Label>
-                <Select value={formData.municipio} onValueChange={(value) => setFormData({ ...formData, municipio: value })}>
-                  <SelectTrigger className={errors.municipio ? 'border-red-500' : ''}>
+                <Select value={formData.municipality} onValueChange={(value) => setFormData({ ...formData, municipality: value })}>
+                  <SelectTrigger className={errors.municipality ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Selecciona un municipio" />
                   </SelectTrigger>
                   <SelectContent>
@@ -355,161 +369,111 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.municipio && <p className="text-sm text-red-600">{errors.municipio}</p>}
+                {errors.municipality && <p className="text-sm text-red-600">{errors.municipality}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="direccion">
-                Dirección <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="address">Dirección (Opcional)</Label>
               <Textarea
-                id="direccion"
-                value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Barrio, calle, número"
                 rows={2}
                 maxLength={200}
-                className={errors.direccion ? 'border-red-500' : ''}
               />
-              <p className="text-sm text-gray-500">{formData.direccion.length}/200</p>
-              {errors.direccion && <p className="text-sm text-red-600">{errors.direccion}</p>}
+              <p className="text-sm text-gray-500">{formData.address?.length || 0}/200</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 3 - Educational Information */}
+        {/* Section 3 - Child Information */}
         <Card>
           <CardHeader>
-            <h3 className="text-gray-900">Información Educativa</h3>
+            <h3 className="text-gray-900">Información del Niño</h3>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="institucion">
-                Institución Educativa <span className="text-red-500">*</span>
+              <Label htmlFor="shortDescription">
+                Descripción Corta <span className="text-red-500">*</span>
               </Label>
-              <Input
-                id="institucion"
-                value={formData.institucion}
-                onChange={(e) => setFormData({ ...formData, institucion: e.target.value })}
-                placeholder="Nombre de la escuela o colegio"
-                className={errors.institucion ? 'border-red-500' : ''}
+              <Textarea
+                id="shortDescription"
+                value={formData.shortDescription}
+                onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
+                placeholder="Breve descripción del niño (ej: 'Niño alegre y juguetón que le gusta el fútbol')"
+                rows={2}
+                maxLength={200}
+                className={errors.shortDescription ? 'border-red-500' : ''}
               />
-              {errors.institucion && <p className="text-sm text-red-600">{errors.institucion}</p>}
+              <p className="text-sm text-gray-500">{formData.shortDescription.length}/200</p>
+              {errors.shortDescription && <p className="text-sm text-red-600">{errors.shortDescription}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="fullStory">
+                Historia Completa <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="fullStory"
+                value={formData.fullStory}
+                onChange={(e) => setFormData({ ...formData, fullStory: e.target.value })}
+                placeholder="Historia del niño, su contexto familiar y situación actual..."
+                rows={6}
+                maxLength={2000}
+                className={errors.fullStory ? 'border-red-500' : ''}
+              />
+              <p className="text-sm text-gray-500">{formData.fullStory.length}/2000</p>
+              {errors.fullStory && <p className="text-sm text-red-600">{errors.fullStory}</p>}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="grado">
-                  Grado Escolar <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.grado} onValueChange={(value) => setFormData({ ...formData, grado: value })}>
-                  <SelectTrigger className={errors.grado ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Selecciona el grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {grados.map((grado) => (
-                      <SelectItem key={grado} value={grado}>
-                        {grado}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.grado && <p className="text-sm text-red-600">{errors.grado}</p>}
+                <Label htmlFor="ethnicity">Etnia (Opcional)</Label>
+                <Input
+                  id="ethnicity"
+                  value={formData.ethnicity}
+                  onChange={(e) => setFormData({ ...formData, ethnicity: e.target.value })}
+                  placeholder="Ej: Quechua, Mesético, etc."
+                  maxLength={100}
+                />
               </div>
 
               <div className="space-y-2">
-                <Label>Jornada</Label>
-                <RadioGroup
-                  value={formData.jornada}
-                  onValueChange={(value: any) => setFormData({ ...formData, jornada: value })}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="mañana" id="mañana" />
-                    <Label htmlFor="mañana" className="cursor-pointer">
-                      Mañana
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="tarde" id="tarde" />
-                    <Label htmlFor="tarde" className="cursor-pointer">
-                      Tarde
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="completa" id="completa" />
-                    <Label htmlFor="completa" className="cursor-pointer">
-                      Completa
-                    </Label>
-                  </div>
-                </RadioGroup>
+                <Label htmlFor="specialCondition">Condición Especial (Opcional)</Label>
+                <Input
+                  id="specialCondition"
+                  value={formData.specialCondition}
+                  onChange={(e) => setFormData({ ...formData, specialCondition: e.target.value })}
+                  placeholder="Ej: Alergia al gluten, etc."
+                  maxLength={200}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 4 - Additional Information */}
+        {/* Section 4 - Needs */}
         <Card>
           <CardHeader>
-            <h3 className="text-gray-900">Información Adicional</h3>
-            <p className="text-sm text-gray-600">Opcional - ayuda a conocer mejor al niño</p>
+            <h3 className="text-gray-900">Necesidades</h3>
+            <p className="text-sm text-gray-600">Selecciona las necesidades específicas del niño</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="historia">Historia del Niño</Label>
-              <Textarea
-                id="historia"
-                value={formData.historia}
-                onChange={(e) => setFormData({ ...formData, historia: e.target.value })}
-                placeholder="Describe brevemente su historia y contexto..."
-                rows={4}
-                maxLength={2000}
-              />
-              <p className="text-sm text-gray-500">{formData.historia.length}/2000</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="suenos">Sueños y Aspiraciones</Label>
-              <Textarea
-                id="suenos"
-                value={formData.suenos}
-                onChange={(e) => setFormData({ ...formData, suenos: e.target.value })}
-                placeholder="¿Qué sueña con ser o hacer en el futuro?"
-                rows={3}
-                maxLength={500}
-              />
-              <p className="text-sm text-gray-500">{formData.suenos.length}/500</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="situacionFamiliar">Situación Familiar</Label>
-              <Textarea
-                id="situacionFamiliar"
-                value={formData.situacionFamiliar}
-                onChange={(e) => setFormData({ ...formData, situacionFamiliar: e.target.value })}
-                placeholder="Contexto familiar (solo visible para administradores)"
-                rows={3}
-                maxLength={1000}
-              />
-              <p className="text-sm text-gray-500">Privado - {formData.situacionFamiliar.length}/1000</p>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Necesidades Específicas</Label>
-              <div className="space-y-2">
-                {necesidadesComunes.map((necesidad) => (
-                  <div key={necesidad} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={necesidad}
-                      checked={formData.necesidades.includes(necesidad)}
-                      onCheckedChange={() => handleNecesidadToggle(necesidad)}
-                    />
-                    <Label htmlFor={necesidad} className="cursor-pointer">
-                      {necesidad}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+              {necesidadesComunes.map((necesidad) => (
+                <div key={necesidad} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={necesidad}
+                    checked={formData.needs.includes(necesidad)}
+                    onCheckedChange={() => handleNecesidadToggle(necesidad)}
+                  />
+                  <Label htmlFor={necesidad} className="cursor-pointer">
+                    {necesidad}
+                  </Label>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
