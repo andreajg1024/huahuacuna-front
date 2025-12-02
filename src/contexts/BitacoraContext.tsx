@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { apadrinamientoService } from '@/services/apadrinamiento.service';
+import { apadrinamientoService, CreateChildDTO } from '@/services/apadrinamiento.service';
 import { bitacoraService } from '@/services/bitacora.service';
 import { toast } from 'sonner';
 
@@ -65,8 +65,8 @@ interface BitacoraContextType {
   getChildById: (id: string) => Child | undefined;
   getChildEntries: (childId: string) => BitacoraEntry[];
   getChildStats: (childId: string) => BitacoraStats;
-  addChild: (child: Omit<Child, 'id' | 'fechaCreacion'>) => Promise<Child>;
-  updateChild: (id: string, updates: Partial<Child>) => Promise<void>;
+  addChild: (child: CreateChildDTO) => Promise<Child>;
+  updateChild: (id: string, updates: Partial<CreateChildDTO>) => Promise<void>;
   deleteChild: (id: string) => Promise<void>;
   addEntry: (entry: Omit<BitacoraEntry, 'id' | 'fechaPublicacion' | 'uploadedBy' | 'uploadedByName'>) => Promise<void>;
   updateEntry: (id: string, updates: Partial<BitacoraEntry>) => Promise<void>;
@@ -289,17 +289,12 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
     };
   };
 
-  const addChild = async (childData: Omit<Child, 'id' | 'fechaCreacion'>): Promise<Child> => {
+  const addChild = async (dto: CreateChildDTO): Promise<Child> => {
     try {
-      console.log('[BitacoraContext] addChild - Datos recibidos:', childData);
-      
-      // Convertir datos del formulario al formato de la API si es necesario
-      // El formulario ya debería enviar en el formato correcto (CreateChildDTO)
-      const dto = childData as any; // Ya viene en formato correcto desde ChildFormPage
-      
-      console.log('[BitacoraContext] addChild - Enviando a API:', dto);
+      console.log('[BitacoraContext] addChild - DTO recibido:', dto);
+      console.log('[BitacoraContext] Tamaño del payload:', JSON.stringify(dto).length, 'bytes');
 
-      // Llamar al servicio de la API (sin userId, ya se maneja en el servicio con el token)
+      // Llamar al servicio de la API directamente con el DTO
       const response = await apadrinamientoService.createChild(dto, 0);
       
       if (!response.success || !response.data) {
@@ -341,10 +336,25 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
       console.error('[BitacoraContext] addChild - Error:', error);
       toast.error(error instanceof Error ? error.message : 'Error al crear el niño');
       
-      // Fallback a mock para desarrollo
+      // Fallback a mock para desarrollo - convertir DTO a Child
       const newChild: Child = {
-        ...childData,
         id: `child-${Date.now()}`,
+        nombre: dto.firstName,
+        apellidos: dto.lastName,
+        edad: new Date().getFullYear() - new Date(dto.dateOfBirth).getFullYear(),
+        fechaNacimiento: dto.dateOfBirth,
+        genero: dto.gender === 'MALE' ? 'masculino' : 'femenino',
+        municipio: dto.municipality,
+        direccion: dto.address || '',
+        institucion: dto.institution || '',
+        grado: dto.grade || '',
+        jornada: 'mañana',
+        foto: dto.photo || '',
+        historia: dto.fullStory || '',
+        suenos: '',
+        situacionFamiliar: '',
+        necesidades: dto.needs || [],
+        estadoApadrinamiento: 'disponible',
         fechaCreacion: new Date().toISOString(),
       };
       setChildrenList((prev) => [...prev, newChild]);
@@ -352,20 +362,45 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateChild = async (id: string, updates: Partial<Child>) => {
+  const updateChild = async (id: string, updates: Partial<CreateChildDTO>) => {
     try {
-      const userId = user?.id ? parseInt(user.id, 10) : 0;
-      if (!userId) throw new Error('Usuario no autenticado');
+      console.log('[BitacoraContext] updateChild - Start', { id, updates });
 
-      const dto: any = { id: parseInt(id, 10), ...apadrinamientoService.convertToApiFormat(updates as any) };
-      const response = await apadrinamientoService.updateChild(dto, userId);
+      // Crear DTO con el ID y los campos a actualizar
+      const dto: any = {
+        id: parseInt(id, 10),
+        ...updates, // Ya viene en el formato correcto del backend
+      };
+
+      console.log('[BitacoraContext] updateChild - DTO para API:', dto);
+
+      const response = await apadrinamientoService.updateChild(dto, 0);
       
       if (!response.success) {
         throw new Error(response.error?.message || 'Error al actualizar el niño');
       }
 
+      // Actualizar el estado local (necesitamos mapear de vuelta a formato Child)
       setChildrenList((prev) =>
-        prev.map((child) => (child.id === id ? { ...child, ...updates } : child))
+        prev.map((child) => {
+          if (child.id !== id) return child;
+          
+          // Convertir updates de formato DTO a formato Child para el estado
+          const localUpdates: Partial<Child> = {};
+          if (updates.firstName !== undefined) localUpdates.nombre = updates.firstName;
+          if (updates.lastName !== undefined) localUpdates.apellidos = updates.lastName;
+          if (updates.dateOfBirth !== undefined) localUpdates.fechaNacimiento = updates.dateOfBirth;
+          if (updates.gender !== undefined) localUpdates.genero = updates.gender === 'MALE' ? 'masculino' : 'femenino';
+          if (updates.municipality !== undefined) localUpdates.municipio = updates.municipality;
+          if (updates.shortDescription !== undefined) localUpdates.historia = updates.shortDescription;
+          if (updates.address !== undefined) localUpdates.direccion = updates.address;
+          if (updates.photo !== undefined) localUpdates.foto = updates.photo;
+          if (updates.needs !== undefined) localUpdates.necesidades = updates.needs;
+          if (updates.institution !== undefined) localUpdates.institucion = updates.institution;
+          if (updates.grade !== undefined) localUpdates.grado = updates.grade;
+          
+          return { ...child, ...localUpdates };
+        })
       );
       
       toast.success('Niño actualizado exitosamente');
@@ -382,10 +417,9 @@ export function BitacoraProvider({ children }: { children: ReactNode }) {
 
   const deleteChild = async (id: string) => {
     try {
-      const userId = user?.id ? parseInt(user.id, 10) : 0;
-      if (!userId) throw new Error('Usuario no autenticado');
+      console.log('[BitacoraContext] deleteChild - Start', { id });
 
-      const response = await apadrinamientoService.deleteChild(parseInt(id, 10), userId);
+      const response = await apadrinamientoService.deleteChild(parseInt(id, 10), 0);
       
       if (!response.success) {
         throw new Error(response.error?.message || 'Error al eliminar el niño');

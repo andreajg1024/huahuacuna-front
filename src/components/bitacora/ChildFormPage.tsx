@@ -160,7 +160,7 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
     setIsLoading(true);
 
     try {
-      // Preparar datos según el formato del backend
+      // Preparar datos según el formato del backend (CreateChildDTO)
       const childData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -172,12 +172,14 @@ export function ChildFormPage({ childId, onNavigate }: ChildFormPageProps) {
         ethnicity: formData.ethnicity?.trim() || undefined,
         specialCondition: formData.specialCondition?.trim() || undefined,
         address: formData.address?.trim() || undefined,
+        // IMPORTANTE: Enviar solo URL, NO base64 (límite del backend es 100KB)
         photo: formData.photo || 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400',
         photos: [],
         needs: formData.needs.length > 0 ? formData.needs : undefined,
       };
 
       console.log('[ChildForm] Enviando datos:', childData);
+      console.log('[ChildForm] Tamaño aproximado:', JSON.stringify(childData).length, 'bytes');
 
       if (isEditing && existingChild) {
         await updateChild(existingChild.id, childData);
