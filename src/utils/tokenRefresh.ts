@@ -48,12 +48,15 @@ export async function attemptTokenRefresh(): Promise<string | null> {
   const refreshToken = localStorage.getItem('refresh_token');
   
   if (!refreshToken) {
-    console.warn('No refresh token available');
+    console.warn('[TokenRefresh] No refresh token available');
     return null;
   }
 
+  console.log('[TokenRefresh] Iniciando refresh de token...');
+
   // Si ya se está refrescando, esperar al resultado
   if (isRefreshing) {
+    console.log('[TokenRefresh] Ya hay un refresh en curso, esperando...');
     return new Promise((resolve) => {
       subscribeTokenRefresh((token: string) => {
         resolve(token);
@@ -68,6 +71,7 @@ export async function attemptTokenRefresh(): Promise<string | null> {
     
     if (response.success && response.data.accessToken) {
       const newAccessToken = response.data.accessToken;
+      console.log('[TokenRefresh] Token refrescado exitosamente');
       
       // Notificar a todos los suscriptores
       onTokenRefreshed(newAccessToken);
@@ -76,19 +80,27 @@ export async function attemptTokenRefresh(): Promise<string | null> {
       return newAccessToken;
     }
     
+    console.warn('[TokenRefresh] Respuesta de refresh sin éxito:', response);
     isRefreshing = false;
     return null;
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    console.error('[TokenRefresh] Error al refrescar token:', error);
     isRefreshing = false;
     
-    // Si el refresh falla, limpiar tokens y redirigir a login
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('auth_user');
-    
-    // Redirigir a login (esto debe ser manejado por el contexto de Auth)
-    window.location.href = '/#login';
+    // IMPORTANTE: Solo limpiar tokens si es un error de autenticación real (401/403)
+    // No limpiar si es un error de red temporal
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('401') || errorMessage.includes('403') || errorMessage.includes('Unauthorized')) {
+      console.error('[TokenRefresh] Error de autenticación, limpiando sesión');
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('auth_user');
+      
+      // Redirigir a login (esto debe ser manejado por el contexto de Auth)
+      window.location.href = '/#login';
+    } else {
+      console.warn('[TokenRefresh] Error temporal, manteniendo sesión');
+    }
     
     return null;
   }
@@ -151,14 +163,20 @@ export async function fetchWithAuth(
  * Uso en componentes React
  */
 export function setupTokenRefreshInterval() {
+  console.log('[TokenRefresh] Configurando intervalo de verificación de token');
+  
   // Verificar cada 4 minutos si el token necesita refresh
   const interval = setInterval(async () => {
     const token = localStorage.getItem('auth_token');
     
     if (token && isTokenExpired(token)) {
+      console.log('[TokenRefresh] Token próximo a expirar, refrescando...');
       await attemptTokenRefresh();
     }
   }, 4 * 60 * 1000); // 4 minutos
   
-  return () => clearInterval(interval);
+  return () => {
+    console.log('[TokenRefresh] Limpiando intervalo de verificación de token');
+    clearInterval(interval);
+  };
 }

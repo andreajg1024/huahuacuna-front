@@ -243,8 +243,59 @@ const initialVolunteers: Volunteer[] = [
 // - Provee helpers para CRUD, duplicar proyectos, filtrar por estado y registrar/eliminar voluntarios.
 // Es la fuente de datos para las vistas de proyectos públicos y la gestión interna (ProjectManagementPage).
 export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [volunteers, setVolunteers] = useState<Volunteer[]>(initialVolunteers);
+  // Cargar datos desde localStorage o usar iniciales
+  const loadProjects = (): Project[] => {
+    try {
+      const stored = localStorage.getItem('huahuacuna_projects');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('[ProjectsContext] Proyectos cargados desde localStorage:', parsed.length);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('[ProjectsContext] Error al cargar proyectos desde localStorage:', error);
+    }
+    console.log('[ProjectsContext] Usando proyectos iniciales:', initialProjects.length);
+    return initialProjects;
+  };
+
+  const loadVolunteers = (): Volunteer[] => {
+    try {
+      const stored = localStorage.getItem('huahuacuna_volunteers');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('[ProjectsContext] Voluntarios cargados desde localStorage:', parsed.length);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('[ProjectsContext] Error al cargar voluntarios desde localStorage:', error);
+    }
+    console.log('[ProjectsContext] Usando voluntarios iniciales:', initialVolunteers.length);
+    return initialVolunteers;
+  };
+
+  const [projects, setProjects] = useState<Project[]>(loadProjects);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>(loadVolunteers);
+
+  // Sincronizar con localStorage cuando cambien los proyectos
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('huahuacuna_projects', JSON.stringify(projects));
+      console.log('[ProjectsContext] Proyectos guardados en localStorage:', projects.length);
+    } catch (error) {
+      console.error('[ProjectsContext] Error al guardar proyectos en localStorage:', error);
+    }
+  }, [projects]);
+
+  // Sincronizar con localStorage cuando cambien los voluntarios
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('huahuacuna_volunteers', JSON.stringify(volunteers));
+      console.log('[ProjectsContext] Voluntarios guardados en localStorage:', volunteers.length);
+    } catch (error) {
+      console.error('[ProjectsContext] Error al guardar voluntarios en localStorage:', error);
+    }
+  }, [volunteers]);
 
   const addProject = (projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'volunteersRegistered' | 'slug'>) => {
     const newProject: Project = {
@@ -255,16 +306,19 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    console.log('[ProjectsContext] addProject - Nuevo proyecto:', newProject.title, 'ID:', newProject.id);
     setProjects([...projects, newProject]);
   };
 
   const updateProject = (id: string, projectData: Partial<Project>) => {
+    console.log('[ProjectsContext] updateProject - ID:', id, 'Datos:', projectData);
     setProjects(projects.map(p => {
       if (p.id === id) {
         const updated = { ...p, ...projectData, updatedAt: new Date().toISOString() };
         if (projectData.title && projectData.title !== p.title) {
           updated.slug = createSlug(projectData.title);
         }
+        console.log('[ProjectsContext] updateProject - Proyecto actualizado:', updated.title);
         return updated;
       }
       return p;
@@ -272,6 +326,7 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const deleteProject = (id: string) => {
+    console.log('[ProjectsContext] deleteProject - Eliminando proyecto ID:', id);
     setProjects(projects.filter(p => p.id !== id));
     // Also delete associated volunteers
     setVolunteers(volunteers.filter(v => v.projectId !== id));

@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
+    console.log('[AuthContext] Verificando sesión existente...');
     const storedToken = localStorage.getItem('auth_token');
     const storedUser = localStorage.getItem('auth_user');
     const storedBlockUntil = localStorage.getItem('block_until');
@@ -127,8 +128,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedBlockUntil) {
       const blockTime = parseInt(storedBlockUntil);
       if (blockTime > Date.now()) {
+        console.log('[AuthContext] Cuenta bloqueada hasta:', new Date(blockTime));
         setBlockUntil(blockTime);
       } else {
+        console.log('[AuthContext] Bloqueo expirado, limpiando...');
         localStorage.removeItem('block_until');
       }
     }
@@ -136,12 +139,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        console.log('[AuthContext] Sesión restaurada para usuario:', parsedUser.email);
         setUser(parsedUser);
         setToken(storedToken);
       } catch (error) {
+        console.error('[AuthContext] Error al parsear usuario almacenado:', error);
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
       }
+    } else {
+      console.log('[AuthContext] No hay sesión previa');
     }
   }, []);
 
@@ -167,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Setup automatic token refresh when user is authenticated
   useEffect(() => {
     if (token && user) {
+      console.log('[AuthContext] Iniciando verificación automática de token para:', user.email);
       // Iniciar verificación periódica de token refresh
       const cleanup = setupTokenRefreshInterval();
       return cleanup;
