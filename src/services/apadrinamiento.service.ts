@@ -44,11 +44,26 @@ export class ApadrinamientoService extends BaseService {
     dto: CreateChildDTO,
     userId: number
   ): Promise<ApiResponse<ChildResponse>> {
-    this.validateCreateChildDTO(dto);
+    console.log('[ApadrinamientoService] createChild - Start', { dto, userId });
+    
+    try {
+      this.validateCreateChildDTO(dto);
+    } catch (validationError: any) {
+      console.error('[ApadrinamientoService] createChild - Validation Error:', validationError);
+      return {
+        success: false,
+        error: {
+          message: validationError.message || 'Error de validación',
+          code: 'VALIDATION_ERROR',
+          details: validationError
+        }
+      };
+    }
 
     // Usar endpoint REST en lugar de Kafka
     try {
       const response = await apiClient.post<ChildResponse>('/api/children', dto);
+      console.log('[ApadrinamientoService] createChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP
       if (!response.success && response.error) {
@@ -91,6 +106,7 @@ export class ApadrinamientoService extends BaseService {
 
       return response;
     } catch (error: any) {
+      console.error('[ApadrinamientoService] createChild - Exception:', error);
       return {
         success: false,
         error: {
@@ -109,11 +125,26 @@ export class ApadrinamientoService extends BaseService {
     dto: UpdateChildDTO,
     userId: number
   ): Promise<ApiResponse<ChildResponse>> {
-    this.validateRequired(dto.id, 'id');
+    console.log('[ApadrinamientoService] updateChild - Start', { dto, userId });
+    
+    try {
+      this.validateRequired(dto.id, 'id');
+    } catch (validationError: any) {
+      console.error('[ApadrinamientoService] updateChild - Validation Error:', validationError);
+      return {
+        success: false,
+        error: {
+          message: validationError.message || 'Error de validación',
+          code: 'VALIDATION_ERROR',
+          details: validationError
+        }
+      };
+    }
     
     try {
       const { id, ...updateData } = dto;
       const response = await apiClient.patch<ChildResponse>(`/api/children/${id}`, updateData);
+      console.log('[ApadrinamientoService] updateChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP
       if (!response.success && response.error) {
@@ -166,6 +197,7 @@ export class ApadrinamientoService extends BaseService {
 
       return response;
     } catch (error: any) {
+      console.error('[ApadrinamientoService] updateChild - Exception:', error);
       return {
         success: false,
         error: {
@@ -184,10 +216,25 @@ export class ApadrinamientoService extends BaseService {
     childId: number,
     userId: number
   ): Promise<ApiResponse<void>> {
-    this.validateRequired(childId, 'childId');
+    console.log('[ApadrinamientoService] deleteChild - Start', { childId, userId });
+    
+    try {
+      this.validateRequired(childId, 'childId');
+    } catch (validationError: any) {
+      console.error('[ApadrinamientoService] deleteChild - Validation Error:', validationError);
+      return {
+        success: false,
+        error: {
+          message: validationError.message || 'Error de validación',
+          code: 'VALIDATION_ERROR',
+          details: validationError
+        }
+      };
+    }
     
     try {
       const response = await apiClient.delete<void>(`/api/children/${childId}`);
+      console.log('[ApadrinamientoService] deleteChild - Response:', response);
 
       // Manejo específico de códigos de error HTTP
       if (!response.success && response.error) {
@@ -512,15 +559,31 @@ export class ApadrinamientoService extends BaseService {
   async createSponsorship(
     dto: CreateSponsorshipDTO
   ): Promise<ApiResponse<SponsorshipResponse>> {
-    this.validateRequired(dto.childId, 'childId');
-    this.validateRequired(dto.sponsorId, 'sponsorId');
-    this.validateRequired(dto.startDate, 'startDate');
+    console.log('[ApadrinamientoService] createSponsorship - Start', dto);
     
-    if (!this.isValidISODate(dto.startDate)) {
-      throw new Error('startDate debe estar en formato ISO 8601');
+    try {
+      this.validateRequired(dto.childId, 'childId');
+      this.validateRequired(dto.sponsorId, 'sponsorId');
+      this.validateRequired(dto.startDate, 'startDate');
+      
+      if (!this.isValidISODate(dto.startDate)) {
+        throw new Error('startDate debe estar en formato ISO 8601');
+      }
+      
+      const response = await apiClient.sendToKafka<SponsorshipResponse>(KafkaTopic.SPONSORSHIP_CREATE, dto);
+      console.log('[ApadrinamientoService] createSponsorship - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] createSponsorship - Error:', error);
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al crear apadrinamiento',
+          code: 'CREATE_SPONSORSHIP_ERROR',
+          details: error
+        }
+      };
     }
-    
-    return apiClient.sendToKafka<SponsorshipResponse>(KafkaTopic.SPONSORSHIP_CREATE, dto);
   }
 
   /**
@@ -529,25 +592,58 @@ export class ApadrinamientoService extends BaseService {
   async endSponsorship(
     dto: EndSponsorshipDTO
   ): Promise<ApiResponse<SponsorshipResponse>> {
-    this.validateRequired(dto.sponsorshipId, 'sponsorshipId');
-    this.validateRequired(dto.endDate, 'endDate');
-    this.validateRequired(dto.reason, 'reason');
+    console.log('[ApadrinamientoService] endSponsorship - Start', dto);
     
-    if (!this.isValidISODate(dto.endDate)) {
-      throw new Error('endDate debe estar en formato ISO 8601');
+    try {
+      this.validateRequired(dto.sponsorshipId, 'sponsorshipId');
+      this.validateRequired(dto.endDate, 'endDate');
+      this.validateRequired(dto.reason, 'reason');
+      
+      if (!this.isValidISODate(dto.endDate)) {
+        throw new Error('endDate debe estar en formato ISO 8601');
+      }
+      
+      const response = await apiClient.sendToKafka<SponsorshipResponse>(KafkaTopic.SPONSORSHIP_END, dto);
+      console.log('[ApadrinamientoService] endSponsorship - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] endSponsorship - Error:', error);
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al finalizar apadrinamiento',
+          code: 'END_SPONSORSHIP_ERROR',
+          details: error
+        }
+      };
     }
-    
-    return apiClient.sendToKafka<SponsorshipResponse>(KafkaTopic.SPONSORSHIP_END, dto);
   }
 
   /**
    * Obtener lista de apadrinamientos
    */
   async listSponsorships(filters?: any): Promise<ApiResponse<SponsorshipResponse[]>> {
-    return apiClient.sendToKafka<SponsorshipResponse[]>(
-      KafkaTopic.SPONSORSHIP_LIST,
-      filters || {}
-    );
+    console.log('[ApadrinamientoService] listSponsorships - Start', { filters });
+    
+    try {
+      const response = await apiClient.sendToKafka<SponsorshipResponse[]>(
+        KafkaTopic.SPONSORSHIP_LIST,
+        filters || {}
+      );
+      console.log('[ApadrinamientoService] listSponsorships - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] listSponsorships - Error:', error);
+      return {
+        success: false,
+        data: [],
+        error: {
+          message: error.message || 'Error al listar apadrinamientos',
+          code: 'LIST_SPONSORSHIPS_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -1024,23 +1120,56 @@ export class ApadrinamientoService extends BaseService {
    * Enviar mensaje
    */
   async sendMessage(dto: SendMessageDTO): Promise<ApiResponse<MessageResponse>> {
-    this.validateRequired(dto.sponsorshipId, 'sponsorshipId');
-    this.validateRequired(dto.senderId, 'senderId');
-    this.validateRequired(dto.message, 'message');
-    this.validateLength(dto.message, 'message', 1, 1000);
+    console.log('[ApadrinamientoService] sendMessage - Start', dto);
     
-    return apiClient.sendToKafka<MessageResponse>(KafkaTopic.MESSAGE_SEND, dto);
+    try {
+      this.validateRequired(dto.sponsorshipId, 'sponsorshipId');
+      this.validateRequired(dto.senderId, 'senderId');
+      this.validateRequired(dto.message, 'message');
+      this.validateLength(dto.message, 'message', 1, 1000);
+      
+      const response = await apiClient.sendToKafka<MessageResponse>(KafkaTopic.MESSAGE_SEND, dto);
+      console.log('[ApadrinamientoService] sendMessage - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] sendMessage - Error:', error);
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al enviar mensaje',
+          code: 'SEND_MESSAGE_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
    * Obtener mensajes
    */
   async listMessages(sponsorshipId: number): Promise<ApiResponse<MessageResponse[]>> {
-    this.validateRequired(sponsorshipId, 'sponsorshipId');
+    console.log('[ApadrinamientoService] listMessages - Start', { sponsorshipId });
     
-    return apiClient.sendToKafka<MessageResponse[]>(KafkaTopic.MESSAGE_LIST, {
-      sponsorshipId,
-    });
+    try {
+      this.validateRequired(sponsorshipId, 'sponsorshipId');
+      
+      const response = await apiClient.sendToKafka<MessageResponse[]>(KafkaTopic.MESSAGE_LIST, {
+        sponsorshipId,
+      });
+      console.log('[ApadrinamientoService] listMessages - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] listMessages - Error:', error);
+      return {
+        success: false,
+        data: [],
+        error: {
+          message: error.message || 'Error al listar mensajes',
+          code: 'LIST_MESSAGES_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**
@@ -1050,13 +1179,29 @@ export class ApadrinamientoService extends BaseService {
     sponsorshipId: number,
     userId: number
   ): Promise<ApiResponse<void>> {
-    this.validateRequired(sponsorshipId, 'sponsorshipId');
-    this.validateRequired(userId, 'userId');
+    console.log('[ApadrinamientoService] markMessagesAsRead - Start', { sponsorshipId, userId });
     
-    return apiClient.sendToKafka<void>(KafkaTopic.MESSAGE_MARK_READ, {
-      sponsorshipId,
-      userId,
-    });
+    try {
+      this.validateRequired(sponsorshipId, 'sponsorshipId');
+      this.validateRequired(userId, 'userId');
+      
+      const response = await apiClient.sendToKafka<void>(KafkaTopic.MESSAGE_MARK_READ, {
+        sponsorshipId,
+        userId,
+      });
+      console.log('[ApadrinamientoService] markMessagesAsRead - Response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('[ApadrinamientoService] markMessagesAsRead - Error:', error);
+      return {
+        success: false,
+        error: {
+          message: error.message || 'Error al marcar mensajes como leídos',
+          code: 'MARK_MESSAGES_READ_ERROR',
+          details: error
+        }
+      };
+    }
   }
 
   /**

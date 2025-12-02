@@ -40,20 +40,24 @@ export function useProjects() {
     }
   ) => {
     try {
+      console.log('[useProjects] createProject - Start', { name, description, type, options });
       setLoading(true);
       setError(null);
 
       const userId = user?.id ? parseInt(user.id, 10) : 0;
       if (!userId) {
+        console.error('[useProjects] createProject - Usuario no autenticado');
         throw new Error('Usuario no autenticado');
       }
 
       // Validaciones locales
       if (name.length < 3 || name.length > 200) {
+        console.error('[useProjects] createProject - Nombre con longitud inválida');
         throw new Error('El nombre debe tener entre 3 y 200 caracteres');
       }
 
       if (description.length < 10 || description.length > 2000) {
+        console.error('[useProjects] createProject - Descripción con longitud inválida');
         throw new Error('La descripción debe tener entre 10 y 2000 caracteres');
       }
 
@@ -75,13 +79,16 @@ export function useProjects() {
       );
 
       if (!response.success || !response.data) {
+        console.error('[useProjects] createProject - Error del servicio:', response.error);
         throw new Error(response.error?.message || 'Error al crear el proyecto');
       }
 
+      console.log('[useProjects] createProject - Success:', response.data);
       toast.success('Proyecto creado exitosamente');
       return { success: true, data: response.data };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear el proyecto';
+      console.error('[useProjects] createProject - Exception:', err);
       setError(message);
       toast.error(message);
       return { success: false, error: message };
@@ -114,24 +121,29 @@ export function useProjects() {
     }
   ) => {
     try {
+      console.log('[useProjects] updateProject - Start', { projectId, updates });
       setLoading(true);
       setError(null);
 
       const userId = user?.id ? parseInt(user.id, 10) : 0;
       if (!userId) {
+        console.error('[useProjects] updateProject - Usuario no autenticado');
         throw new Error('Usuario no autenticado');
       }
 
       if (!projectId) {
+        console.error('[useProjects] updateProject - projectId requerido');
         throw new Error('projectId es requerido');
       }
 
       // Validaciones locales
       if (updates.name && (updates.name.length < 3 || updates.name.length > 200)) {
+        console.error('[useProjects] updateProject - Nombre con longitud inválida');
         throw new Error('El nombre debe tener entre 3 y 200 caracteres');
       }
 
       if (updates.description && (updates.description.length < 10 || updates.description.length > 2000)) {
+        console.error('[useProjects] updateProject - Descripción con longitud inválida');
         throw new Error('La descripción debe tener entre 10 y 2000 caracteres');
       }
 
@@ -144,13 +156,16 @@ export function useProjects() {
       );
 
       if (!response.success || !response.data) {
+        console.error('[useProjects] updateProject - Error del servicio:', response.error);
         throw new Error(response.error?.message || 'Error al actualizar el proyecto');
       }
 
+      console.log('[useProjects] updateProject - Success:', response.data);
       toast.success('Proyecto actualizado exitosamente');
       return { success: true, data: response.data };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar el proyecto';
+      console.error('[useProjects] updateProject - Exception:', err);
       setError(message);
       toast.error(message);
       return { success: false, error: message };
@@ -169,19 +184,23 @@ export function useProjects() {
    */
   const deleteProject = async (projectId: number) => {
     try {
+      console.log('[useProjects] deleteProject - Start', { projectId });
       setLoading(true);
       setError(null);
 
       const userId = user?.id ? parseInt(user.id, 10) : 0;
       if (!userId) {
+        console.error('[useProjects] deleteProject - Usuario no autenticado');
         throw new Error('Usuario no autenticado');
       }
 
       if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+        console.error('[useProjects] deleteProject - Permisos insuficientes');
         throw new Error('No tienes permisos para eliminar proyectos');
       }
 
       if (!projectId) {
+        console.error('[useProjects] deleteProject - projectId requerido');
         throw new Error('projectId es requerido');
       }
 
