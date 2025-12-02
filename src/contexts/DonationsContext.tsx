@@ -1,4 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { donationsService } from '@/services/donations.service';
+import { 
+  CreateDonationDTO, 
+  DonationResponse,
+  CreateInKindDonationDTO,
+  InKindDonationResponse
+} from '@/types/api.types';
+import { toast } from 'sonner';
+import { useAuth } from './AuthContext';
 
 // Contexto central para toda la lógica de donaciones.
 // Administra donaciones monetarias y en especie en memoria, incluyendo
@@ -245,7 +254,7 @@ interface DonationsContextType {
   inKindDonations: InKindDonation[];
   
   // Monetary donations
-  createDonation: (donation: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>) => Donation;
+  createDonation: (donation: CreateDonationDTO) => Promise<Donation>;
   updateDonation: (id: string, updates: Partial<Donation>) => void;
   getDonationById: (id: string) => Donation | undefined;
   getDonationByTransactionId: (transactionId: string) => Donation | undefined;
@@ -274,6 +283,53 @@ const DonationsContext = createContext<DonationsContextType | undefined>(undefin
 export const DonationsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [donations, setDonations] = useState<Donation[]>(MOCK_DONATIONS);
   const [inKindDonations, setInKindDonations] = useState<InKindDonation[]>(MOCK_IN_KIND_DONATIONS);
+  const { user } = useAuth();
+
+  // ========== MAPPERS ==========
+  
+  /**
+   * Mapear DonationResponse del backend a Donation del frontend
+   */
+  const mapDonationResponseToDonation = (response: DonationResponse): Donation => {
+    return {
+      id: response.id.toString(),
+      transactionId: response.transactionId,
+      amount: response.amount,
+      currency: response.currency,
+      donorId: response.donorId?.toString(),
+      donorName: response.donorName,
+      donorIdType: response.donorIdType,
+      donorIdNumber: response.donorIdNumber,
+      donorEmail: response.donorEmail,
+      donorPhone: response.donorPhone,
+      donorAddress: undefined,
+      donorCity: undefined,
+      donorCountry: response.donorCountry,
+      isAnonymous: response.isAnonymous,
+      destination: response.destination,
+      donationType: 'monetaria',
+      isRecurring: response.isRecurring,
+      paymentMethod: response.paymentMethod as PaymentMethod,
+      pseReference: response.pseReference,
+      pseBank: response.pseBank,
+      pseResponse: undefined,
+      status: response.status as DonationStatus,
+      statusReason: undefined,
+      approvedAt: response.status === 'approved' ? response.updatedAt : undefined,
+      rejectedAt: response.status === 'rejected' ? response.updatedAt : undefined,
+      receiptUrl: response.receiptUrl,
+      certificateUrl: response.certificateUrl,
+      certificateNumber: undefined,
+      certificateGeneratedAt: undefined,
+      confirmationEmailSent: false,
+      confirmationEmailSentAt: undefined,
+      registeredBy: undefined,
+      adminNotes: undefined,
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      ipAddress: undefined,
+    };
+  };
 
   const generateTransactionId = (): string => {
     const date = new Date();
@@ -287,22 +343,64 @@ export const DonationsProvider: React.FC<{ children: ReactNode }> = ({ children 
     return amount >= 50000; // RF-036: Certificate for donations >$50,000
   };
 
-  const createDonation = (donationData: Omit<Donation, 'id' | 'transactionId' | 'createdAt' | 'updatedAt' | 'confirmationEmailSent'>): Donation => {
-    const id = `donation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const transactionId = generateTransactionId();
-    const now = new Date().toISOString();
-    
-    const newDonation: Donation = {
-      ...donationData,
-      id,
-      transactionId,
-      createdAt: now,
-      updatedAt: now,
-      confirmationEmailSent: false,
-    };
+  const createDonation = async (dto: CreateDonationDTO): Promise<Donation> => {
+    try {
+      console.log('[DonationsContext] createDonation - DTO recibido:', dto);
+      console.log('[DonationsContext] Tamaño del payload:', JSON.stringify(dto).length, 'bytes');
 
-    setDonations(prev => [...prev, newDonation]);
-    return newDonation;
+      // Llamar al servicio de la API
+      const response = await donationsService.createMonetaryDonation(dto);
+      
+      if (!response.success || !response.data) {
+        console.error('[DonationsContext] createDonation - Error de API:', response.error);
+        throw new Error(response.error?.message || 'Error al crear la donación');
+      }
+
+      console.log('[DonationsContext] createDonation - Respuesta de API:', response.data);
+
+      // Convertir respuesta de la API al formato local
+      const newDonation = mapDonationResponseToDonation(response.data);
+      
+      // Actualizar estado local
+      setDonations((prev) => [...prev, newDonation]);
+      
+      toast.success('Donación registrada exitosamente');
+      return newDonation;
+    } catch (error) {
+      console.error('[DonationsContext] createDonation - Error:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear la donación');
+      
+      // Fallback a mock para desarrollo
+      const id = `donation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date().toISOString();
+      
+      const newDonation: Donation = {
+        id,
+        transactionId: generateTransactionId(),
+        amount: dto.amount,
+        currency: dto.currency,
+        donorName: dto.donorName,
+        donorIdType: dto.donorIdType,
+        donorIdNumber: dto.donorIdNumber,
+        donorEmail: dto.donorEmail,
+        donorPhone: dto.donorPhone,
+        donorCountry: dto.donorCountry,
+        isAnonymous: dto.isAnonymous,
+        destination: dto.destination,
+        donationType: 'monetaria',
+        isRecurring: dto.isRecurring,
+        paymentMethod: dto.paymentMethod,
+        pseReference: dto.pseReference,
+        pseBank: dto.pseBank,
+        status: 'pendiente',
+        confirmationEmailSent: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      setDonations((prev) => [...prev, newDonation]);
+      return newDonation;
+    }
   };
 
   const updateDonation = (id: string, updates: Partial<Donation>) => {

@@ -1,4 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { VolunteeringService } from '@/services/volunteering.service';
+import { 
+  CreateVolunteeringApplicationDTO, 
+  VolunteeringApplicationResponse 
+} from '@/types/api.types';
+import { toast } from 'sonner';
+
+const volunteeringService = new VolunteeringService();
 
 // Types
 export type VolunteerStatus = 
@@ -145,7 +153,7 @@ export interface VolunteeringPageContent {
 interface VolunteeringContextType {
   applications: VolunteerApplication[];
   pageContent: VolunteeringPageContent;
-  addApplication: (application: Omit<VolunteerApplication, 'id' | 'fechaSolicitud' | 'ultimaActualizacion' | 'historial'>) => string;
+  addApplication: (application: CreateVolunteeringApplicationDTO) => Promise<string>;
   updateApplication: (id: string, updates: Partial<VolunteerApplication>) => void;
   deleteApplication: (id: string) => void;
   changeStatus: (id: string, newStatus: VolunteerStatus, notas?: string, admin?: string) => void;
@@ -357,26 +365,146 @@ export const VolunteeringProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [applications, setApplications] = useState<VolunteerApplication[]>([]);
   const [pageContent, setPageContent] = useState<VolunteeringPageContent>(defaultPageContent);
 
-  const addApplication = (applicationData: Omit<VolunteerApplication, 'id' | 'fechaSolicitud' | 'ultimaActualizacion' | 'historial'>) => {
-    const id = `VOL-${new Date().getFullYear()}-${String(applications.length + 1).padStart(4, '0')}`;
-    const now = new Date().toISOString();
-    
-    const newApplication: VolunteerApplication = {
-      ...applicationData,
-      id,
-      fechaSolicitud: now,
-      ultimaActualizacion: now,
+  // ========== MAPPERS ==========
+  
+  /**
+   * Mapear VolunteeringApplicationResponse del backend a VolunteerApplication del frontend
+   */
+  const mapApplicationResponseToApplication = (response: VolunteeringApplicationResponse): VolunteerApplication => {
+    return {
+      id: response.id.toString(),
+      foto: undefined,
+      nombreCompleto: response.fullName,
+      tipoDocumento: 'Cédula de Ciudadanía',
+      numeroDocumento: '',
+      fechaNacimiento: '',
+      edad: 0,
+      genero: undefined,
+      email: response.email,
+      telefono: response.phone,
+      whatsapp: undefined,
+      direccion: '',
+      ciudad: '',
+      departamento: undefined,
+      areasInteres: response.areas as VolunteerArea[],
+      habilidades: '',
+      experienciaPrevia: response.experience,
+      motivacion: response.motivation,
+      queEsperaAportar: undefined,
+      diasDisponibles: response.availability,
+      horariosDisponibles: [],
+      horasPorSemana: 0,
+      compromisoTiempo: '',
+      fechaInicioPreferida: undefined,
+      restriccionesHorario: undefined,
+      referencias: response.references?.map(ref => ({
+        nombre: ref.name,
+        relacion: ref.relationship,
+        telefono: ref.phone,
+        email: ref.email,
+        verificado: false,
+      })) || [],
+      cvUrl: '',
+      cartaMotivacionUrl: undefined,
+      certificadosUrls: undefined,
+      comoSeEntero: undefined,
+      status: mapStatusFromBackend(response.status),
+      fechaSolicitud: response.submittedAt,
+      ultimaActualizacion: response.reviewedAt || response.submittedAt,
+      adminAsignado: undefined,
+      prioridad: undefined,
+      tags: undefined,
+      motivoRechazo: undefined,
+      notasInternas: response.reviewNotes,
       historial: [{
         id: '1',
-        fecha: now,
+        fecha: response.submittedAt,
         tipo: 'status_change',
         descripcion: 'Solicitud creada',
-        detalles: 'Estado inicial: Pendiente de Revisión'
-      }]
+        detalles: 'Estado inicial: ' + response.status
+      }],
     };
+  };
 
-    setApplications(prev => [...prev, newApplication]);
-    return id;
+  const mapStatusFromBackend = (status: string): VolunteerStatus => {
+    const statusMap: Record<string, VolunteerStatus> = {
+      'pending': 'pendiente_revision',
+      'in_review': 'en_revision',
+      'approved': 'aprobado',
+      'rejected': 'rechazado',
+      'in_training': 'activo',
+      'active': 'activo',
+      'inactive': 'inactivo',
+    };
+    return statusMap[status] || 'pendiente_revision';
+  };
+
+  const addApplication = async (dto: CreateVolunteeringApplicationDTO): Promise<string> => {
+    try {
+      console.log('[VolunteeringContext] addApplication - DTO recibido:', dto);
+      console.log('[VolunteeringContext] Tamaño del payload:', JSON.stringify(dto).length, 'bytes');
+
+      // Llamar al servicio de la API
+      const response = await volunteeringService.createApplication(dto);
+      
+      if (!response.success || !response.data) {
+        console.error('[VolunteeringContext] addApplication - Error de API:', response.error);
+        throw new Error(response.error?.message || 'Error al crear la aplicación');
+      }
+
+      console.log('[VolunteeringContext] addApplication - Respuesta de API:', response.data);
+
+      // Convertir respuesta de la API al formato local
+      const newApplication = mapApplicationResponseToApplication(response.data);
+      
+      // Actualizar estado local
+      setApplications((prev) => [...prev, newApplication]);
+      
+      toast.success('Solicitud de voluntariado enviada exitosamente');
+      return newApplication.id;
+    } catch (error) {
+      console.error('[VolunteeringContext] addApplication - Error:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear la aplicación');
+      
+      // Fallback a mock para desarrollo
+      const id = `VOL-${new Date().getFullYear()}-${String(applications.length + 1).padStart(4, '0')}`;
+      const now = new Date().toISOString();
+      
+      const newApplication: VolunteerApplication = {
+        id,
+        nombreCompleto: dto.fullName,
+        email: dto.email,
+        telefono: dto.phone,
+        areasInteres: dto.areas as VolunteerArea[],
+        habilidades: '',
+        experienciaPrevia: dto.experience,
+        motivacion: dto.motivation,
+        diasDisponibles: dto.availability,
+        horariosDisponibles: [],
+        horasPorSemana: 0,
+        compromisoTiempo: '',
+        referencias: dto.references?.map(ref => ({
+          nombre: ref.name,
+          relacion: ref.relationship,
+          telefono: ref.phone,
+          email: ref.email,
+        })) || [],
+        cvUrl: '',
+        status: 'pendiente_revision',
+        fechaSolicitud: now,
+        ultimaActualizacion: now,
+        historial: [{
+          id: '1',
+          fecha: now,
+          tipo: 'status_change',
+          descripcion: 'Solicitud creada',
+          detalles: 'Estado inicial: Pendiente de Revisión'
+        }],
+      } as VolunteerApplication;
+
+      setApplications(prev => [...prev, newApplication]);
+      return id;
+    }
   };
 
   const updateApplication = (id: string, updates: Partial<VolunteerApplication>) => {

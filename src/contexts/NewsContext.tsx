@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { NewsService } from '@/services/news.service';
+import { CreateNewsDTO, NewsResponse } from '@/types/api.types';
+import { toast } from 'sonner';
+import { useAuth } from './AuthContext';
+
+const newsService = new NewsService();
 
 // Types
 export type NewsStatus = 'borrador' | 'programado' | 'publicado' | 'archivado';
@@ -86,7 +92,7 @@ export interface NewsCategoryData {
 interface NewsContextType {
   articles: NewsArticle[];
   categories: NewsCategoryData[];
-  addArticle: (article: Omit<NewsArticle, 'id' | 'createdAt' | 'updatedAt' | 'views'>) => string;
+  addArticle: (article: CreateNewsDTO) => Promise<string>;
   updateArticle: (id: string, updates: Partial<NewsArticle>) => void;
   deleteArticle: (id: string) => void;
   getArticleById: (id: string) => NewsArticle | undefined;
@@ -165,6 +171,78 @@ const defaultCategories: NewsCategoryData[] = [
 export const NewsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [categories, setCategories] = useState<NewsCategoryData[]>(defaultCategories);
+  const { user } = useAuth();
+
+  // ========== MAPPERS ==========
+  
+  /**
+   * Mapear NewsResponse del backend a NewsArticle del frontend
+   */
+  const mapNewsResponseToArticle = (response: NewsResponse): NewsArticle => {
+    return {
+      id: response.id.toString(),
+      slug: response.slug,
+      title: response.title,
+      excerpt: response.excerpt,
+      content: response.content,
+      featuredImage: response.featuredImage,
+      featuredImageAlt: response.featuredImageAlt,
+      featuredImageCaption: undefined,
+      galleryImages: [],
+      videoUrl: undefined,
+      primaryCategory: response.primaryCategory as NewsCategory,
+      additionalCategories: response.additionalCategories as NewsCategory[] | undefined,
+      tags: response.tags,
+      metaDescription: response.metaDescription,
+      metaKeywords: undefined,
+      canonicalUrl: undefined,
+      ogTitle: undefined,
+      ogDescription: undefined,
+      ogImage: undefined,
+      authorId: response.authorId.toString(),
+      authorName: response.authorName,
+      authorAvatar: undefined,
+      authorBio: undefined,
+      coAuthors: undefined,
+      source: undefined,
+      imageCredits: undefined,
+      status: mapStatusFromBackend(response.status),
+      publishedAt: response.publishedAt,
+      scheduledFor: response.scheduledFor,
+      visibility: mapVisibilityFromBackend(response.visibility),
+      password: undefined,
+      isFeatured: response.isFeatured,
+      allowComments: response.allowComments,
+      sendNotification: false,
+      readingTime: calculateReadingTime(response.content),
+      showToc: false,
+      showUpdatedDate: false,
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      createdBy: response.authorId.toString(),
+      views: response.views,
+      lastViewedAt: undefined,
+    };
+  };
+
+  const mapStatusFromBackend = (status: string): NewsStatus => {
+    const statusMap: Record<string, NewsStatus> = {
+      'draft': 'borrador',
+      'scheduled': 'programado',
+      'published': 'publicado',
+      'archived': 'archivado',
+    };
+    return statusMap[status] || 'borrador';
+  };
+
+  const mapVisibilityFromBackend = (visibility: string): NewsVisibility => {
+    const visibilityMap: Record<string, NewsVisibility> = {
+      'public': 'publico',
+      'private': 'privado',
+      'protected': 'protegido',
+    };
+    return visibilityMap[visibility] || 'publico';
+  };
 
   const generateSlug = (title: string): string => {
     let slug = title
@@ -202,24 +280,74 @@ export const NewsProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return Math.ceil(words / wordsPerMinute);
   };
 
-  const addArticle = (articleData: Omit<NewsArticle, 'id' | 'createdAt' | 'updatedAt' | 'views'>) => {
-    const id = `NEWS-${Date.now()}`;
-    const now = new Date().toISOString();
-    
-    const newArticle: NewsArticle = {
-      ...articleData,
-      id,
-      createdAt: now,
-      updatedAt: now,
-      views: 0
-    };
+  const addArticle = async (dto: CreateNewsDTO): Promise<string> => {
+    try {
+      console.log('[NewsContext] addArticle - DTO recibido:', dto);
+      console.log('[NewsContext] Tamaño del payload:', JSON.stringify({ dto, userId: user?.id || 0 }).length, 'bytes');
 
-    setArticles(prev => [...prev, newArticle]);
-    
-    // Update category counts
-    updateCategoryCounts();
-    
-    return id;
+      // Llamar al servicio de la API
+      const response = await newsService.createArticle(dto, user?.id || 0);
+      
+      if (!response.success || !response.data) {
+        console.error('[NewsContext] addArticle - Error de API:', response.error);
+        throw new Error(response.error?.message || 'Error al crear el artículo');
+      }
+
+      console.log('[NewsContext] addArticle - Respuesta de API:', response.data);
+
+      // Convertir respuesta de la API al formato local
+      const newArticle = mapNewsResponseToArticle(response.data);
+      
+      // Actualizar estado local
+      setArticles((prev) => [...prev, newArticle]);
+      
+      // Update category counts
+      updateCategoryCounts();
+      
+      toast.success('Artículo creado exitosamente');
+      return newArticle.id;
+    } catch (error) {
+      console.error('[NewsContext] addArticle - Error:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al crear el artículo');
+      
+      // Fallback a mock para desarrollo
+      const id = `NEWS-${Date.now()}`;
+      const now = new Date().toISOString();
+      
+      const newArticle: NewsArticle = {
+        id,
+        slug: generateSlug(dto.title),
+        title: dto.title,
+        excerpt: dto.excerpt,
+        content: dto.content,
+        featuredImage: dto.featuredImage,
+        featuredImageAlt: dto.featuredImageAlt,
+        primaryCategory: dto.primaryCategory as NewsCategory,
+        additionalCategories: dto.additionalCategories as NewsCategory[],
+        tags: dto.tags,
+        metaDescription: dto.metaDescription,
+        authorId: user?.id?.toString() || '0',
+        authorName: user?.name || 'Usuario',
+        status: mapStatusFromBackend(dto.status),
+        publishedAt: dto.publishedAt,
+        scheduledFor: dto.scheduledFor,
+        visibility: mapVisibilityFromBackend(dto.visibility),
+        isFeatured: dto.isFeatured,
+        allowComments: dto.allowComments,
+        sendNotification: false,
+        readingTime: calculateReadingTime(dto.content),
+        showToc: false,
+        showUpdatedDate: false,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: user?.id?.toString() || '0',
+        views: 0,
+      };
+
+      setArticles(prev => [...prev, newArticle]);
+      updateCategoryCounts();
+      return id;
+    }
   };
 
   const updateArticle = (id: string, updates: Partial<NewsArticle>) => {
