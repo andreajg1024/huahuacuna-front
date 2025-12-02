@@ -127,15 +127,6 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
   return (
     <div className="p-8">
       {/* Welcome Header */}
-    { action: 'Bitácora actualizada', user: 'Carlos Admin', time: 'Hace 1 hora' },
-    { action: 'Evento creado', user: 'María González', time: 'Hace 2 horas' },
-    { action: 'Donación recibida', user: 'Juan Pérez', time: 'Hace 3 horas' },
-    { action: 'Nuevo niño registrado', user: 'Admin Principal', time: 'Hace 5 horas' },
-  ];
-
-  return (
-    <div className="p-8">
-      {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Panel de Super Administrador</h1>
         <p className="text-gray-600">
