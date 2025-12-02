@@ -9,6 +9,7 @@ export interface ApiResponse<T = any> {
   error?: {
     message: string;
     code?: string;
+    statusCode?: number;
     details?: any;
   };
   success: boolean;
@@ -115,94 +116,188 @@ export enum KafkaTopic {
 export type UserRole = 'PADRINO' | 'ADMIN' | 'SUPER_ADMIN';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
 
-// Register Padrino
-export interface RegisterPadrinoDTO {
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  documentId: string;
-  address: string;
+// ============================================================================
+// AUTH DTOs (Request/Response)
+// ============================================================================
+
+/**
+ * POST /auth/register
+ * Request body para registro de padrinos
+ */
+export interface RegisterDTO {
+  name: string;        // min 3, max 100
+  email: string;       // email válido
+  password: string;    // min 8, debe contener minúscula, mayúscula y número
+  phone: string;       // min 7, max 20
+  documentId: string;  // min 5, max 20
+  address: string;     // min 5, max 200
 }
 
-// Login
+/**
+ * Alias para mantener compatibilidad
+ */
+export type RegisterPadrinoDTO = RegisterDTO;
+
+/**
+ * Response de POST /auth/register
+ */
+export interface RegisterResponse {
+  message: string;
+  userId: number;
+}
+
+/**
+ * POST /auth/login
+ * Request body para inicio de sesión
+ */
 export interface LoginDTO {
   email: string;
   password: string;
 }
 
+/**
+ * Response de POST /auth/login
+ */
 export interface LoginResponse {
-  user: UserResponse;
   accessToken: string;
   refreshToken: string;
+  user: UserResponse;
 }
 
-// User Response
+/**
+ * User Response - Estructura completa del usuario
+ */
 export interface UserResponse {
   id: number;
-  name: string;
   email: string;
-  phone?: string;
-  documentId?: string;
-  address?: string;
+  name: string;
   role: UserRole;
   status: UserStatus;
   avatar?: string;
   emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+  phone?: string;
+  documentId?: string;
+  address?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
 }
 
-// Verify Email
+/**
+ * POST /auth/verify-email
+ */
 export interface VerifyEmailDTO {
   token: string;
 }
 
-// Request Password Reset
+export interface VerifyEmailResponse {
+  message: string;
+}
+
+/**
+ * POST /auth/password/request-reset
+ */
 export interface RequestPasswordResetDTO {
   email: string;
 }
 
-// Reset Password
-export interface ResetPasswordDTO {
-  token: string;
-  newPassword: string;
+export interface RequestPasswordResetResponse {
+  message: string;
 }
 
-// Refresh Token
+/**
+ * POST /auth/password/reset
+ */
+export interface ResetPasswordDTO {
+  token: string;
+  newPassword: string; // min 8, incluye mayúscula/minúscula/número
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+/**
+ * POST /auth/refresh
+ */
 export interface RefreshTokenDTO {
   refreshToken: string;
 }
 
 export interface RefreshTokenResponse {
   accessToken: string;
-  refreshToken: string;
 }
 
-// Logout
+/**
+ * POST /auth/logout
+ */
 export interface LogoutDTO {
   refreshToken: string;
 }
 
-// Update Profile (Padrino)
-export interface UpdateProfileDTO {
-  phone?: string;
-  address?: string;
-  avatar?: string;
+export interface LogoutResponse {
+  message: string;
 }
 
-// Create Admin (Super Admin only)
+/**
+ * PATCH /auth/profile
+ * Update profile (solo PADRINO)
+ */
+export interface UpdateProfileDTO {
+  phone?: string;   // min 7, max 20
+  address?: string; // min 5, max 200
+  avatar?: string;  // URL
+}
+
+/**
+ * POST /auth/admins
+ * Create admin (solo SUPER_ADMIN)
+ */
 export interface CreateAdminDTO {
-  name: string;
-  email: string;
-  password: string;
+  name: string;     // min 3, max 100
+  email: string;    // email válido
+  password: string; // min 8, contiene mayúsc/minúsc/número
   role: 'ADMIN' | 'SUPER_ADMIN';
 }
 
-// Update Admin (Super Admin only)
+/**
+ * PATCH /auth/admins/:adminId
+ * Update admin (solo SUPER_ADMIN)
+ */
 export interface UpdateAdminDTO {
-  name?: string;
+  name?: string;   // min 3, max 100
   status?: UserStatus;
+}
+
+/**
+ * GET /auth/admins
+ * Response para lista de administradores
+ */
+export interface AdminListItemResponse {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  status: string;
+  lastLoginAt?: string;
+  createdAt: string;
+  createdBy?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+export interface AdminListResponse {
+  admins: AdminListItemResponse[];
+}
+
+/**
+ * GET /auth/test
+ */
+export interface AuthTestResponse {
+  message: string;
+  timestamp: string;
 }
 
 // ============================================================================
